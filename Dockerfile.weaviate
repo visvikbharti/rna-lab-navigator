@@ -1,0 +1,26 @@
+FROM semitechnologies/weaviate:1.22.4
+
+# Set environment variables for Railway deployment
+ENV QUERY_DEFAULTS_LIMIT=20
+ENV AUTHENTICATION_ANONYMOUS_ACCESS_ENABLED=true
+ENV DEFAULT_VECTORIZER_MODULE=text2vec-openai
+ENV ENABLE_MODULES=text2vec-openai
+ENV CLUSTER_HOSTNAME=node1
+ENV PERSISTENCE_DATA_PATH=/var/lib/weaviate
+ENV BACKUP_FILESYSTEM_PATH=/var/lib/weaviate/backups
+ENV PROMETHEUS_MONITORING_ENABLED=true
+ENV PROMETHEUS_MONITORING_PORT=2112
+
+# Create necessary directories
+RUN mkdir -p /var/lib/weaviate/backups
+
+# Expose ports
+EXPOSE 8080 2112
+
+# Health check
+HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \
+  CMD curl -f http://localhost:8080/v1/.well-known/ready || exit 1
+
+# Use the default Weaviate entrypoint
+ENTRYPOINT ["/bin/weaviate"]
+CMD ["--host", "0.0.0.0", "--port", "8080", "--scheme", "http"]

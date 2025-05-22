@@ -1,0 +1,544 @@
+{% extends "admin/base_site.html" %}
+{% load i18n static %}
+
+{% block extrastyle %}
+{{ block.super }}
+<style type="text/css">
+  .status-card {
+    margin-bottom: 20px;
+    padding: 15px;
+    border-radius: 4px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+  }
+  .status-pass {
+    background-color: #d4edda;
+    border: 1px solid #c3e6cb;
+  }
+  .status-warning {
+    background-color: #fff3cd;
+    border: 1px solid #ffeeba;
+  }
+  .status-critical, .status-error {
+    background-color: #f8d7da;
+    border: 1px solid #f5c6cb;
+  }
+  .summary-box {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 20px;
+  }
+  .summary-stat {
+    text-align: center;
+    padding: 10px;
+    border-radius: 4px;
+    background-color: #f8f9fa;
+    border: 1px solid #dee2e6;
+    flex: 1;
+    margin: 0 5px;
+  }
+  .check-item {
+    margin-bottom: 10px;
+    padding: 10px;
+    border-left: 4px solid #ccc;
+    background-color: #f8f9fa;
+  }
+  .check-pass {
+    border-left-color: #28a745;
+  }
+  .check-warning {
+    border-left-color: #ffc107;
+  }
+  .check-critical, .check-error {
+    border-left-color: #dc3545;
+  }
+  .security-actions {
+    margin-bottom: 20px;
+  }
+  .progress-container {
+    height: 20px;
+    width: 100%;
+    background-color: #e9ecef;
+    border-radius: 0.25rem;
+    margin: 10px 0;
+  }
+  .progress-bar {
+    height: 100%;
+    border-radius: 0.25rem;
+    background-color: #007bff;
+    transition: width 0.6s ease;
+  }
+  .legend {
+    display: flex;
+    margin-bottom: 10px;
+  }
+  .legend-item {
+    display: flex;
+    align-items: center;
+    margin-right: 15px;
+  }
+  .legend-color {
+    width: 15px;
+    height: 15px;
+    margin-right: 5px;
+    border-radius: 2px;
+  }
+</style>
+{% endblock %}
+
+{% block bodyclass %}{{ block.super }} security-dashboard{% endblock %}
+
+{% block breadcrumbs %}
+<div class="breadcrumbs">
+  <a href="{% url 'admin:index' %}">{% trans 'Home' %}</a> &rsaquo;
+  {% trans 'Security Dashboard' %}
+</div>
+{% endblock %}
+
+{% block content %}
+<div id="content-main">
+  <h1>{% trans 'Security Dashboard' %}</h1>
+  
+  <div class="security-actions module">
+    <h2>{% trans 'Security Actions' %}</h2>
+    <div style="padding: 10px;">
+      <button id="run-verification" class="button">{% trans 'Run Security Verification' %}</button>
+      <button id="check-headers" class="button">{% trans 'Check Security Headers' %}</button>
+      <button id="view-settings" class="button">{% trans 'View Security Settings' %}</button>
+    </div>
+  </div>
+  
+  <div id="verification-results" style="display: none;">
+    <div class="module">
+      <h2>{% trans 'Verification Results' %}</h2>
+      <div id="status-container" class="status-card">
+        <h3>{% trans 'Overall Status' %}: <span id="overall-status"></span></h3>
+        <p id="timestamp"></p>
+      </div>
+      
+      <div class="summary-box">
+        <div class="summary-stat">
+          <h4>{% trans 'Total Checks' %}</h4>
+          <div id="total-checks" style="font-size: 1.5em;"></div>
+        </div>
+        <div class="summary-stat">
+          <h4>{% trans 'Passing' %}</h4>
+          <div id="passing-checks" style="font-size: 1.5em;"></div>
+        </div>
+        <div class="summary-stat">
+          <h4>{% trans 'Success Rate' %}</h4>
+          <div id="success-rate" style="font-size: 1.5em;"></div>
+        </div>
+      </div>
+      
+      <div class="progress-container">
+        <div id="progress-bar" class="progress-bar"></div>
+      </div>
+      
+      <div class="legend">
+        <div class="legend-item">
+          <div class="legend-color" style="background-color: #28a745;"></div>
+          <span>Pass</span>
+        </div>
+        <div class="legend-item">
+          <div class="legend-color" style="background-color: #ffc107;"></div>
+          <span>Warning</span>
+        </div>
+        <div class="legend-item">
+          <div class="legend-color" style="background-color: #dc3545;"></div>
+          <span>Critical/Error</span>
+        </div>
+      </div>
+      
+      <h3>{% trans 'Recommendations' %}</h3>
+      <ul id="recommendations"></ul>
+      
+      <h3>{% trans 'Check Details' %}</h3>
+      <div id="check-details"></div>
+    </div>
+  </div>
+  
+  <div id="headers-results" style="display: none;">
+    <div class="module">
+      <h2>{% trans 'Security Headers Check' %}</h2>
+      <div id="headers-status-container" class="status-card">
+        <h3>{% trans 'Score' %}: <span id="headers-score"></span></h3>
+      </div>
+      
+      <h3>{% trans 'Present Headers' %}</h3>
+      <ul id="present-headers"></ul>
+      
+      <h3>{% trans 'Missing Headers' %}</h3>
+      <ul id="missing-headers"></ul>
+      
+      <h3>{% trans 'CSP Analysis' %}</h3>
+      <div id="csp-analysis"></div>
+    </div>
+  </div>
+  
+  <div id="settings-results" style="display: none;">
+    <div class="module">
+      <h2>{% trans 'Security Settings' %}</h2>
+      <table class="security-settings">
+        <thead>
+          <tr>
+            <th>{% trans 'Setting' %}</th>
+            <th>{% trans 'Value' %}</th>
+            <th>{% trans 'Recommendation' %}</th>
+          </tr>
+        </thead>
+        <tbody id="settings-table"></tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<script type="text/javascript">
+  document.addEventListener('DOMContentLoaded', function() {
+    const runVerificationBtn = document.getElementById('run-verification');
+    const checkHeadersBtn = document.getElementById('check-headers');
+    const viewSettingsBtn = document.getElementById('view-settings');
+    
+    // Run verification
+    runVerificationBtn.addEventListener('click', function() {
+      document.getElementById('verification-results').style.display = 'block';
+      document.getElementById('headers-results').style.display = 'none';
+      document.getElementById('settings-results').style.display = 'none';
+      
+      runVerificationBtn.disabled = true;
+      runVerificationBtn.textContent = 'Running...';
+      
+      fetch('{% url "admin:verify-security" %}')
+        .then(response => response.json())
+        .then(data => {
+          displayVerificationResults(data);
+          runVerificationBtn.disabled = false;
+          runVerificationBtn.textContent = 'Run Security Verification';
+        })
+        .catch(error => {
+          console.error('Error running verification:', error);
+          runVerificationBtn.disabled = false;
+          runVerificationBtn.textContent = 'Run Security Verification';
+        });
+    });
+    
+    // Check headers
+    checkHeadersBtn.addEventListener('click', function() {
+      document.getElementById('verification-results').style.display = 'none';
+      document.getElementById('headers-results').style.display = 'block';
+      document.getElementById('settings-results').style.display = 'none';
+      
+      checkHeadersBtn.disabled = true;
+      checkHeadersBtn.textContent = 'Checking...';
+      
+      // Simulated headers check result (replace with actual endpoint)
+      setTimeout(() => {
+        const mockHeadersResult = {
+          security_score: 85,
+          present_headers: [
+            { name: 'X-Content-Type-Options', value: 'nosniff' },
+            { name: 'X-Frame-Options', value: 'DENY' },
+            { name: 'X-XSS-Protection', value: '1; mode=block' },
+            { name: 'Referrer-Policy', value: 'strict-origin-when-cross-origin' },
+            { name: 'Content-Security-Policy', value: 'default-src \'self\'; img-src \'self\' data:;' }
+          ],
+          missing_headers: [
+            { name: 'Permissions-Policy', description: 'Controls browser features' },
+            { name: 'Cross-Origin-Embedder-Policy', description: 'Controls embedding' }
+          ],
+          csp_analysis: {
+            unsafe_directives: ['unsafe-inline in script-src'],
+            strengths: ['default-src is restricted', 'img-src is restricted'],
+            recommendations: ['Remove unsafe-inline from script-src']
+          }
+        };
+        
+        displayHeadersResults(mockHeadersResult);
+        checkHeadersBtn.disabled = false;
+        checkHeadersBtn.textContent = 'Check Security Headers';
+      }, 1000);
+    });
+    
+    // View settings
+    viewSettingsBtn.addEventListener('click', function() {
+      document.getElementById('verification-results').style.display = 'none';
+      document.getElementById('headers-results').style.display = 'none';
+      document.getElementById('settings-results').style.display = 'block';
+      
+      viewSettingsBtn.disabled = true;
+      viewSettingsBtn.textContent = 'Loading...';
+      
+      fetch('{% url "admin:security-settings" %}')
+        .then(response => response.json())
+        .then(data => {
+          displaySettingsResults(data);
+          viewSettingsBtn.disabled = false;
+          viewSettingsBtn.textContent = 'View Security Settings';
+        })
+        .catch(error => {
+          console.error('Error loading settings:', error);
+          viewSettingsBtn.disabled = false;
+          viewSettingsBtn.textContent = 'View Security Settings';
+        });
+    });
+    
+    // Display verification results
+    function displayVerificationResults(data) {
+      // Display overall status
+      const statusElem = document.getElementById('overall-status');
+      statusElem.textContent = data.overall_status.toUpperCase();
+      
+      const statusContainer = document.getElementById('status-container');
+      statusContainer.className = 'status-card status-' + data.overall_status;
+      
+      // Display timestamp
+      document.getElementById('timestamp').textContent = 'Last checked: ' + data.timestamp;
+      
+      // Display summary
+      const summary = data.summary;
+      document.getElementById('total-checks').textContent = summary.total_checks;
+      document.getElementById('passing-checks').textContent = summary.passing_checks;
+      document.getElementById('success-rate').textContent = summary.passing_percent.toFixed(1) + '%';
+      
+      // Update progress bar
+      const progressBar = document.getElementById('progress-bar');
+      progressBar.style.width = summary.passing_percent + '%';
+      if (summary.passing_percent === 100) {
+        progressBar.style.backgroundColor = '#28a745';
+      } else if (summary.passing_percent >= 80) {
+        progressBar.style.backgroundColor = '#ffc107';
+      } else {
+        progressBar.style.backgroundColor = '#dc3545';
+      }
+      
+      // Display recommendations
+      const recsElem = document.getElementById('recommendations');
+      recsElem.innerHTML = '';
+      
+      if (data.recommendations && data.recommendations.length > 0) {
+        data.recommendations.forEach(rec => {
+          const li = document.createElement('li');
+          li.textContent = rec;
+          recsElem.appendChild(li);
+        });
+      } else {
+        const li = document.createElement('li');
+        li.textContent = 'No recommendations - all checks passed!';
+        recsElem.appendChild(li);
+      }
+      
+      // Display check details
+      const checksElem = document.getElementById('check-details');
+      checksElem.innerHTML = '';
+      
+      if (data.checks) {
+        for (const [checkName, result] of Object.entries(data.checks)) {
+          const div = document.createElement('div');
+          div.className = 'check-item check-' + result.status;
+          
+          const title = document.createElement('h4');
+          title.textContent = formatCheckName(checkName) + ' - ' + result.status.toUpperCase();
+          div.appendChild(title);
+          
+          const message = document.createElement('p');
+          message.textContent = result.message;
+          div.appendChild(message);
+          
+          if (result.details) {
+            const details = document.createElement('pre');
+            details.textContent = JSON.stringify(result.details, null, 2);
+            div.appendChild(details);
+          }
+          
+          checksElem.appendChild(div);
+        }
+      }
+    }
+    
+    // Display headers results
+    function displayHeadersResults(data) {
+      // Display score
+      document.getElementById('headers-score').textContent = data.security_score + '/100';
+      
+      const headersContainer = document.getElementById('headers-status-container');
+      if (data.security_score >= 90) {
+        headersContainer.className = 'status-card status-pass';
+      } else if (data.security_score >= 70) {
+        headersContainer.className = 'status-card status-warning';
+      } else {
+        headersContainer.className = 'status-card status-critical';
+      }
+      
+      // Display present headers
+      const presentHeadersElem = document.getElementById('present-headers');
+      presentHeadersElem.innerHTML = '';
+      
+      data.present_headers.forEach(header => {
+        const li = document.createElement('li');
+        li.innerHTML = `<strong>${header.name}</strong>: ${header.value}`;
+        presentHeadersElem.appendChild(li);
+      });
+      
+      // Display missing headers
+      const missingHeadersElem = document.getElementById('missing-headers');
+      missingHeadersElem.innerHTML = '';
+      
+      if (data.missing_headers.length === 0) {
+        const li = document.createElement('li');
+        li.textContent = 'No missing headers!';
+        missingHeadersElem.appendChild(li);
+      } else {
+        data.missing_headers.forEach(header => {
+          const li = document.createElement('li');
+          li.innerHTML = `<strong>${header.name}</strong>: ${header.description}`;
+          missingHeadersElem.appendChild(li);
+        });
+      }
+      
+      // Display CSP analysis
+      const cspAnalysisElem = document.getElementById('csp-analysis');
+      cspAnalysisElem.innerHTML = '';
+      
+      if (data.csp_analysis) {
+        // Unsafe directives
+        if (data.csp_analysis.unsafe_directives.length > 0) {
+          const h4 = document.createElement('h4');
+          h4.textContent = 'Issues';
+          cspAnalysisElem.appendChild(h4);
+          
+          const ul = document.createElement('ul');
+          data.csp_analysis.unsafe_directives.forEach(directive => {
+            const li = document.createElement('li');
+            li.textContent = directive;
+            ul.appendChild(li);
+          });
+          cspAnalysisElem.appendChild(ul);
+        }
+        
+        // Strengths
+        if (data.csp_analysis.strengths.length > 0) {
+          const h4 = document.createElement('h4');
+          h4.textContent = 'Strengths';
+          cspAnalysisElem.appendChild(h4);
+          
+          const ul = document.createElement('ul');
+          data.csp_analysis.strengths.forEach(strength => {
+            const li = document.createElement('li');
+            li.textContent = strength;
+            ul.appendChild(li);
+          });
+          cspAnalysisElem.appendChild(ul);
+        }
+        
+        // Recommendations
+        if (data.csp_analysis.recommendations.length > 0) {
+          const h4 = document.createElement('h4');
+          h4.textContent = 'Recommendations';
+          cspAnalysisElem.appendChild(h4);
+          
+          const ul = document.createElement('ul');
+          data.csp_analysis.recommendations.forEach(rec => {
+            const li = document.createElement('li');
+            li.textContent = rec;
+            ul.appendChild(li);
+          });
+          cspAnalysisElem.appendChild(ul);
+        }
+      }
+    }
+    
+    // Display settings results
+    function displaySettingsResults(data) {
+      const settingsTable = document.getElementById('settings-table');
+      settingsTable.innerHTML = '';
+      
+      // Settings and their recommendations
+      const settingsInfo = {
+        'DEBUG': {
+          recommendation: 'Should be FALSE in production',
+          ideal: false
+        },
+        'ENABLE_CONNECTION_TIMEOUT': {
+          recommendation: 'Should be TRUE for security',
+          ideal: true
+        },
+        'CONNECTION_TIMEOUT_SECONDS': {
+          recommendation: 'Should be 1800 (30 minutes) or less',
+          ideal: value => value <= 1800
+        },
+        'SCAN_REQUESTS_FOR_PII': {
+          recommendation: 'Should be TRUE for sensitive data',
+          ideal: true
+        },
+        'SCAN_RESPONSES_FOR_PII': {
+          recommendation: 'Consider enabling for high security',
+          ideal: null  // Optional
+        },
+        'AUTO_REDACT_PII': {
+          recommendation: 'Consider enabling for sensitive data',
+          ideal: null  // Optional
+        },
+        'ENABLE_DP_EMBEDDING_PROTECTION': {
+          recommendation: 'Should be TRUE for privacy protection',
+          ideal: true
+        },
+        'DP_EPSILON': {
+          recommendation: 'Lower values (0.1-0.5) provide better privacy',
+          ideal: value => value <= 0.5
+        },
+        'SECURITY_HEADERS_MONITORING': {
+          recommendation: 'Should be TRUE for best practices',
+          ideal: true
+        }
+      };
+      
+      // Add settings to table
+      for (const [setting, value] of Object.entries(data)) {
+        const row = document.createElement('tr');
+        
+        // Setting name
+        const nameCell = document.createElement('td');
+        nameCell.textContent = setting;
+        row.appendChild(nameCell);
+        
+        // Setting value
+        const valueCell = document.createElement('td');
+        valueCell.textContent = value.toString();
+        
+        // Check if value matches recommendation
+        const info = settingsInfo[setting];
+        if (info) {
+          if (
+            (typeof info.ideal === 'boolean' && value === info.ideal) ||
+            (typeof info.ideal === 'function' && info.ideal(value)) ||
+            info.ideal === null
+          ) {
+            valueCell.style.color = '#28a745';
+          } else {
+            valueCell.style.color = '#dc3545';
+          }
+        }
+        
+        row.appendChild(valueCell);
+        
+        // Recommendation
+        const recCell = document.createElement('td');
+        if (info) {
+          recCell.textContent = info.recommendation;
+        }
+        row.appendChild(recCell);
+        
+        settingsTable.appendChild(row);
+      }
+    }
+    
+    // Helper function to format check name
+    function formatCheckName(name) {
+      // Convert snake_case to Title Case
+      return name.replace('check_', '')
+        .split('_')
+        .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+        .join(' ');
+    }
+  });
+</script>
+{% endblock %}

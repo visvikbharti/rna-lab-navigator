@@ -1,0 +1,62 @@
+version: '3.8'
+
+services:
+  postgres:
+    image: postgres:14-alpine
+    container_name: rna_postgres
+    restart: always
+    ports:
+      - "5432:5432"
+    environment:
+      - POSTGRES_DB=rna_db
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    container_name: rna_redis
+    restart: always
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+  
+  weaviate:
+    image: semitechnologies/weaviate:1.26.1
+    container_name: rna_weaviate
+    ports:
+      - "8080:8080"
+    restart: always
+    environment:
+      - QUERY_DEFAULTS_LIMIT=20
+      - AUTHENTICATION_ANONYMOUS_ACCESS_ENABLED=true
+      - PERSISTENCE_DATA_PATH=/var/lib/weaviate
+      - DEFAULT_VECTORIZER_MODULE=text2vec-openai
+      - ENABLE_MODULES=text2vec-openai
+      - CLUSTER_HOSTNAME=node1
+      # mTLS configuration (uncomment once certificates are generated)
+      # - ENABLE_MTLS=${ENABLE_MTLS:-false}
+      # - MTLS_CA_FILE=/certs/ca-cert.pem
+      # - MTLS_SERVER_CERT_FILE=/certs/server-cert.pem
+      # - MTLS_SERVER_KEY_FILE=/certs/server-key.pem
+    volumes:
+      - weaviate_data:/var/lib/weaviate
+      # Mount certificates directory (uncomment once certificates are generated)
+      # - ${MTLS_CERTS_DIR:-./backend/security/certs}:/certs
+
+volumes:
+  postgres_data:
+  redis_data:
+  weaviate_data:

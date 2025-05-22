@@ -1,0 +1,272 @@
+@import './styles/design-tokens.css';
+@import './styles/design-system.css';
+@import './styles/components.css';
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Base styles for the RNA Lab Navigator */
+@layer base {
+  html {
+    font-family: var(--font-primary);
+    scroll-behavior: smooth;
+  }
+
+  body {
+    font-family: var(--font-primary);
+    line-height: var(--leading-normal);
+    font-weight: var(--weight-normal);
+    color: var(--rna-charcoal);
+    background-color: var(--rna-platinum);
+    font-synthesis: none;
+    text-rendering: optimizeLegibility;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  /* Typography scale */
+  h1 {
+    font-size: var(--text-h1);
+    line-height: var(--leading-tight);
+    font-weight: var(--weight-semibold);
+    color: var(--rna-charcoal);
+  }
+
+  h2 {
+    font-size: var(--text-h2);
+    line-height: var(--leading-tight);
+    font-weight: var(--weight-semibold);
+    color: var(--rna-charcoal);
+  }
+
+  h3 {
+    font-size: var(--text-h3);
+    line-height: var(--leading-normal);
+    font-weight: var(--weight-semibold);
+    color: var(--rna-charcoal);
+  }
+
+  h4 {
+    font-size: var(--text-h4);
+    line-height: var(--leading-normal);
+    font-weight: var(--weight-medium);
+    color: var(--rna-charcoal);
+  }
+
+  p {
+    font-size: var(--text-body);
+    line-height: var(--leading-relaxed);
+    color: var(--rna-graphite);
+  }
+
+  /* Form elements */
+  input, textarea, select {
+    font-family: inherit;
+  }
+
+  /* Focus styles for accessibility */
+  *:focus-visible {
+    outline: none;
+    box-shadow: var(--focus-ring);
+    outline-offset: var(--focus-ring-offset);
+  }
+
+  /* Selection styles */
+  ::selection {
+    background-color: var(--rna-bright-teal);
+    color: var(--rna-white);
+  }
+
+  ::-moz-selection {
+    background-color: var(--rna-bright-teal);
+    color: var(--rna-white);
+  }
+}
+
+/* Component layer for reusable patterns */
+@layer components {
+  /* Enhanced button styles */
+  .btn-hero {
+    @apply bg-gradient-interactive text-white font-semibold px-8 py-4 rounded-xl shadow-lg;
+    @apply transition-all duration-300 ease-back-out;
+    @apply hover:shadow-2xl hover:-translate-y-1;
+    @apply focus:outline-none focus:ring-4 focus:ring-rna-bright-teal/30;
+    @apply active:scale-95;
+  }
+
+  .btn-ghost {
+    @apply bg-transparent text-rna-deep-teal font-medium px-6 py-3 rounded-lg;
+    @apply border border-rna-bright-teal transition-all duration-200;
+    @apply hover:bg-rna-bright-teal hover:text-white hover:-translate-y-0.5;
+    @apply focus:outline-none focus:ring-3 focus:ring-rna-bright-teal/30;
+  }
+
+  /* Enhanced card styles */
+  .card-elevated {
+    @apply bg-white rounded-2xl shadow-lg p-6;
+    @apply transition-all duration-300 ease-out;
+    @apply hover:shadow-xl hover:-translate-y-1;
+    @apply border border-gray-100;
+  }
+
+  .card-glass {
+    @apply bg-gradient-glass backdrop-blur-sm rounded-2xl p-6;
+    @apply border border-white/20 shadow-lg;
+    @apply transition-all duration-300 ease-out;
+  }
+
+  /* Input enhancements */
+  .input-enhanced {
+    @apply w-full px-4 py-3 rounded-xl border border-gray-200;
+    @apply bg-white/80 backdrop-blur-sm transition-all duration-200;
+    @apply focus:border-rna-bright-teal focus:ring-4 focus:ring-rna-bright-teal/20;
+    @apply focus:bg-white placeholder:text-rna-silver;
+  }
+
+  /* Loading states */
+  .skeleton {
+    @apply bg-gradient-to-r from-gray-200 via-gray-100 to-gray-200;
+    @apply animate-shimmer bg-[length:200%_100%] rounded;
+  }
+
+  /* Status indicators */
+  .status-indicator {
+    @apply inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium;
+  }
+
+  .status-success {
+    @apply bg-rna-enzyme-green/10 text-rna-enzyme-green;
+  }
+
+  .status-warning {
+    @apply bg-rna-warning-amber/10 text-rna-warning-amber;
+  }
+
+  .status-error {
+    @apply bg-rna-error-red/10 text-rna-error-red;
+  }
+
+  .status-info {
+    @apply bg-rna-helix-blue/10 text-rna-helix-blue;
+  }
+
+  /* Scientific styling */
+  .molecular-pattern {
+    background-image: radial-gradient(circle at 2px 2px, var(--rna-bright-teal) 1px, transparent 0);
+    background-size: 20px 20px;
+    opacity: 0.1;
+  }
+
+  .confidence-high {
+    @apply text-rna-enzyme-green border-rna-enzyme-green bg-rna-enzyme-green/5;
+  }
+
+  .confidence-medium {
+    @apply text-rna-warning-amber border-rna-warning-amber bg-rna-warning-amber/5;
+  }
+
+  .confidence-low {
+    @apply text-rna-error-red border-rna-error-red bg-rna-error-red/5;
+  }
+}
+
+/* Utility layer for custom utilities */
+@layer utilities {
+  /* Gradient text */
+  .text-gradient {
+    background: linear-gradient(135deg, var(--rna-deep-teal), var(--rna-bright-teal));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  /* Glow effects */
+  .glow-teal {
+    box-shadow: 0 0 20px rgba(45, 212, 191, 0.4);
+  }
+
+  .glow-blue {
+    box-shadow: 0 0 20px rgba(59, 130, 246, 0.4);
+  }
+
+  /* Animation utilities */
+  .animate-float {
+    animation: bounce-gentle 3s ease-in-out infinite;
+  }
+
+  /* Glass morphism */
+  .glass {
+    background: rgba(255, 255, 255, 0.1);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+  }
+
+  /* Scrollbar styling */
+  .scrollbar-thin {
+    scrollbar-width: thin;
+    scrollbar-color: var(--rna-silver) var(--rna-platinum);
+  }
+
+  .scrollbar-thin::-webkit-scrollbar {
+    width: 6px;
+  }
+
+  .scrollbar-thin::-webkit-scrollbar-track {
+    background: var(--rna-platinum);
+  }
+
+  .scrollbar-thin::-webkit-scrollbar-thumb {
+    background: var(--rna-silver);
+    border-radius: 3px;
+  }
+
+  .scrollbar-thin::-webkit-scrollbar-thumb:hover {
+    background: var(--rna-graphite);
+  }
+
+  /* Text utilities */
+  .text-balance {
+    text-wrap: balance;
+  }
+
+  /* Layout utilities */
+  .container-custom {
+    max-width: var(--container-xl);
+    margin-left: auto;
+    margin-right: auto;
+    padding-left: var(--space-6);
+    padding-right: var(--space-6);
+  }
+
+  /* Aspect ratio utilities for scientific content */
+  .aspect-golden {
+    aspect-ratio: 1.618 / 1;
+  }
+
+  .aspect-publication {
+    aspect-ratio: 8.5 / 11;
+  }
+}
+
+/* Motion preferences */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* High contrast mode support */
+@media (prefers-contrast: high) {
+  .card-elevated {
+    @apply border-2 border-black;
+  }
+  
+  .btn-primary {
+    @apply border-2 border-black;
+  }
+}

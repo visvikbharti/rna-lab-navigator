@@ -1,0 +1,89 @@
+{% extends "admin/base_site.html" %}
+{% load i18n admin_urls static %}
+
+{% block extrastyle %}{{ block.super }}
+<link rel="stylesheet" type="text/css" href="{% static "admin/css/changelists.css" %}">
+<style>
+  .blocked-ip {
+    padding: 10px;
+    margin-bottom: 10px;
+    background-color: #fff8f8;
+    border: 1px solid #ffd0d0;
+    border-radius: 4px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  .blocked-ip button {
+    background-color: #aa0000;
+    color: white;
+    border: none;
+    padding: 5px 10px;
+    border-radius: 3px;
+    cursor: pointer;
+  }
+  .no-blocked-ips {
+    padding: 20px;
+    text-align: center;
+    background-color: #f8f8f8;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+  }
+  .summary {
+    margin-bottom: 20px;
+  }
+</style>
+{% endblock %}
+
+{% block breadcrumbs %}
+<div class="breadcrumbs">
+  <a href="{% url 'admin:index' %}">Home</a>
+  &rsaquo; <a href="{% url 'admin:app_list' app_label='analytics' %}">Analytics</a>
+  &rsaquo; <a href="{% url 'admin:analytics_securityevent_changelist' %}">Security events</a>
+  &rsaquo; Blocked IP Addresses
+</div>
+{% endblock %}
+
+{% block content %}
+<div id="content-main">
+  <div class="module">
+    <div class="summary">
+      <h2>Currently Blocked IP Addresses</h2>
+      <p>This page shows IP addresses that have been blocked by the Web Application Firewall (WAF). These addresses are stored in the cache and will automatically expire after the specified duration.</p>
+    </div>
+    
+    {% if blocked_ips %}
+      <div class="results">
+        <table id="result_list">
+          <thead>
+            <tr>
+              <th>IP Address</th>
+              <th>Time Remaining</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for ip in blocked_ips %}
+              <tr class="{% cycle 'row1' 'row2' %}">
+                <td>{{ ip.ip }}</td>
+                <td>{{ ip.expires_in }}</td>
+                <td>
+                  <form method="post" action="{% url 'admin:securityevent-unblock-ip-direct' %}">
+                    {% csrf_token %}
+                    <input type="hidden" name="ip_address" value="{{ ip.ip }}">
+                    <button type="submit">Unblock</button>
+                  </form>
+                </td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    {% else %}
+      <div class="no-blocked-ips">
+        <p>There are currently no blocked IP addresses.</p>
+      </div>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

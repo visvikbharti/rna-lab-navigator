@@ -1,0 +1,245 @@
+version: '3.8'
+
+services:
+  nginx:
+    image: nginx:stable-alpine
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./nginx/conf.d:/etc/nginx/conf.d:ro
+      - ./nginx/ssl:/etc/nginx/ssl:ro
+      - ./nginx/www:/var/www/html:ro
+      - ./nginx/logs:/var/log/nginx
+    depends_on:
+      - backend
+      - frontend
+    networks:
+      - web
+    restart: always
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    image: rna-lab-backend:${TAG:-latest}
+    env_file:
+      - ./backend/.env.production
+    volumes:
+      - backend_media:/app/media
+      - backend_static:/app/static
+      - backend_backups:/app/backups
+    command: >
+      sh -c "python manage.py migrate &&
+             python manage.py collectstatic --noinput &&
+             gunicorn rna_backend.wsgi:application --bind 0.0.0.0:8000 --workers 4 --timeout 120"
+    depends_on:
+      - postgres
+      - redis
+      - weaviate
+    networks:
+      - web
+      - backend
+    restart: always
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/api/health/"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    image: rna-lab-frontend:${TAG:-latest}
+    networks:
+      - web
+    restart: always
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:80/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 5s
+
+  celery:
+    image: rna-lab-backend:${TAG:-latest}
+    command: ["celery", "-A", "rna_backend", "worker", "--loglevel=info", "--concurrency=4"]
+    env_file:
+      - ./backend/.env.production
+    volumes:
+      - backend_media:/app/media
+      - backend_backups:/app/backups
+    depends_on:
+      - postgres
+      - redis
+      - weaviate
+    networks:
+      - backend
+    restart: always
+    healthcheck:
+      test: ["CMD", "celery", "-A", "rna_backend", "inspect", "ping"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 20s
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  celery-beat:
+    image: rna-lab-backend:${TAG:-latest}
+    command: ["celery", "-A", "rna_backend", "beat", "--loglevel=info"]
+    env_file:
+      - ./backend/.env.production
+    volumes:
+      - backend_backups:/app/backups
+    depends_on:
+      - postgres
+      - redis
+      - celery
+    networks:
+      - backend
+    restart: always
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  postgres:
+    image: postgres:14-alpine
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    env_file:
+      - ./backend/.env
+    environment:
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-postgres}
+      - POSTGRES_USER=${POSTGRES_USER:-postgres}
+      - POSTGRES_DB=${POSTGRES_DB:-rna_db}
+    networks:
+      - backend
+    restart: always
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+
+  redis:
+    image: redis:7-alpine
+    command: redis-server --appendonly yes --requirepass ${REDIS_PASSWORD:-redis}
+    volumes:
+      - redis_data:/data
+    networks:
+      - backend
+    restart: always
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 5s
+
+  weaviate:
+    image: semitechnologies/weaviate:1.22.4
+    ports:
+      - "8080:8080"
+    environment:
+      - QUERY_DEFAULTS_LIMIT=20
+      - AUTHENTICATION_ANONYMOUS_ACCESS_ENABLED=${WEAVIATE_ANONYMOUS_ACCESS:-true}
+      - PERSISTENCE_DATA_PATH=/var/lib/weaviate
+      - DEFAULT_VECTORIZER_MODULE=text2vec-openai
+      - ENABLE_MODULES=text2vec-openai
+      - CLUSTER_HOSTNAME=node1
+      # mTLS configuration
+      - ENABLE_MTLS=${ENABLE_MTLS:-false}
+      - MTLS_CA_FILE=/certs/ca-cert.pem
+      - MTLS_SERVER_CERT_FILE=/certs/server-cert.pem
+      - MTLS_SERVER_KEY_FILE=/certs/server-key.pem
+    volumes:
+      - weaviate_data:/var/lib/weaviate
+      - ${MTLS_CERTS_DIR:-./backend/security/certs}:/certs
+    networks:
+      - backend
+    restart: always
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/v1/.well-known/ready"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 15s
+
+  prometheus:
+    image: prom/prometheus:latest
+    volumes:
+      - ./monitoring/prometheus.yml:/etc/prometheus/prometheus.yml
+      - prometheus_data:/prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--web.console.libraries=/etc/prometheus/console_libraries'
+      - '--web.console.templates=/etc/prometheus/consoles'
+    networks:
+      - monitoring
+    restart: always
+
+  grafana:
+    image: grafana/grafana:latest
+    volumes:
+      - grafana_data:/var/lib/grafana
+      - ./monitoring/grafana/provisioning:/etc/grafana/provisioning
+      - ./monitoring/grafana/dashboards:/var/lib/grafana/dashboards
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_PASSWORD:-admin}
+      - GF_USERS_ALLOW_SIGN_UP=false
+    networks:
+      - monitoring
+    restart: always
+
+  loki:
+    image: grafana/loki:latest
+    command: -config.file=/etc/loki/local-config.yaml
+    volumes:
+      - ./monitoring/loki-config.yaml:/etc/loki/local-config.yaml
+      - loki_data:/loki
+    networks:
+      - monitoring
+    restart: always
+
+  promtail:
+    image: grafana/promtail:latest
+    volumes:
+      - ./monitoring/promtail-config.yaml:/etc/promtail/config.yaml
+      - ./nginx/logs:/var/log/nginx
+      - /var/log:/var/log
+    command: -config.file=/etc/promtail/config.yaml
+    networks:
+      - monitoring
+    restart: always
+    depends_on:
+      - loki
+
+networks:
+  web:
+    driver: bridge
+  backend:
+    driver: bridge
+  monitoring:
+    driver: bridge
+
+volumes:
+  postgres_data:
+  redis_data:
+  weaviate_data:
+  backend_media:
+  backend_static:
+  backend_backups:
+  prometheus_data:
+  grafana_data:
+  loki_data:

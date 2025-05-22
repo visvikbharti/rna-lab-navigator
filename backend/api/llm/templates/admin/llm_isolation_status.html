@@ -1,0 +1,229 @@
+{% extends "admin/base_site.html" %}
+{% load i18n admin_urls static admin_list %}
+
+{% block extrastyle %}
+  {{ block.super }}
+  <link rel="stylesheet" type="text/css" href="{% static "admin/css/forms.css" %}">
+  <style>
+    .status-box {
+      padding: 15px;
+      margin-bottom: 20px;
+      border-radius: 5px;
+    }
+    .status-isolated {
+      background-color: #d4edda;
+      border: 1px solid #c3e6cb;
+      color: #155724;
+    }
+    .status-not-isolated {
+      background-color: #f8d7da;
+      border: 1px solid #f5c6cb;
+      color: #721c24;
+    }
+    .status-pending {
+      background-color: #fff3cd;
+      border: 1px solid #ffeeba;
+      color: #856404;
+    }
+    .setting-box {
+      padding: 15px;
+      margin-bottom: 20px;
+      border: 1px solid #ddd;
+      border-radius: 5px;
+    }
+    .recommendation-box {
+      padding: 15px;
+      margin-bottom: 20px;
+      background-color: #e2f0fd;
+      border: 1px solid #b8daff;
+      border-radius: 5px;
+    }
+    .code-block {
+      font-family: monospace;
+      padding: 10px;
+      margin: 10px 0;
+      background-color: #f5f5f5;
+      border: 1px solid #ddd;
+      border-radius: 3px;
+      overflow-x: auto;
+    }
+    .status-detail {
+      margin-top: 10px;
+      padding: 10px;
+      background-color: #f8f9fa;
+      border: 1px solid #ddd;
+      border-radius: 3px;
+    }
+    .error-list {
+      color: #721c24;
+      background-color: #f8d7da;
+      padding: 10px;
+      border-radius: 3px;
+      margin-top: 10px;
+    }
+  </style>
+{% endblock %}
+
+{% block breadcrumbs %}
+<div class="breadcrumbs">
+<a href="{% url 'admin:index' %}">{% trans 'Home' %}</a>
+&rsaquo; <a href="{% url 'admin:app_list' app_label=opts.app_label %}">{{ opts.app_config.verbose_name }}</a>
+&rsaquo; LLM Network Isolation
+</div>
+{% endblock %}
+
+{% block content %}
+<div id="content-main">
+  <h1>LLM Network Isolation Status</h1>
+  
+  <!-- Current Status -->
+  <div class="status-box {% if status.isolated %}status-isolated{% else %}status-not-isolated{% endif %}">
+    <h2>Network Isolation Status: {% if status.isolated %}Enabled{% else %}Disabled{% endif %}</h2>
+    <p>
+      {% if status.isolated %}
+        <strong>Isolation is active.</strong> The system is using local LLMs without external API access.
+      {% else %}
+        <strong>Isolation is not active.</strong> The system may use external LLM APIs.
+      {% endif %}
+    </p>
+    
+    <div class="status-detail">
+      <h3>Status Details:</h3>
+      <ul>
+        <li><strong>Local LLM Available:</strong> {% if status.local_available %}Yes{% else %}No{% endif %}</li>
+        <li><strong>OpenAI API Blocked:</strong> {% if status.openai_blocked %}Yes{% else %}No{% endif %}</li>
+        {% if current_settings.LLM_NETWORK_ISOLATION %}<li><strong>Isolation Enabled in Settings:</strong> Yes</li>{% endif %}
+        {% if current_settings.LLM_FORCE_ISOLATION %}<li><strong>Forced Isolation:</strong> Yes</li>{% endif %}
+      </ul>
+      
+      {% if status.errors %}
+        <div class="error-list">
+          <h4>Issues Detected:</h4>
+          <ul>
+            {% for error in status.errors %}
+              <li>{{ error }}</li>
+            {% endfor %}
+          </ul>
+        </div>
+      {% endif %}
+    </div>
+  </div>
+  
+  <!-- Toggle Isolation Form -->
+  <div class="setting-box">
+    <h2>Manage Isolation</h2>
+    <p>
+      {% if status.isolated %}
+        Currently using local LLMs within the network. You can disable isolation to use OpenAI's API.
+      {% else %}
+        Currently using external LLM APIs. You can enable isolation to use only local LLMs.
+      {% endif %}
+    </p>
+    
+    <form action="{% url 'admin:toggle_llm_isolation' %}" method="post">
+      {% csrf_token %}
+      <div class="submit-row">
+        <input type="submit" value="{% if status.isolated %}Disable{% else %}Enable{% endif %} Network Isolation" class="{% if status.isolated %}default{% else %}default{% endif %}">
+      </div>
+      <p class="help">
+        <strong>Note:</strong> This is a demonstration. In a production implementation, this would modify your .env file or database settings.
+      </p>
+    </form>
+  </div>
+  
+  <!-- Current Configuration -->
+  <div class="setting-box">
+    <h2>Current Configuration</h2>
+    <div class="code-block">
+      <pre># LLM Network Isolation Settings
+LLM_NETWORK_ISOLATION={{ current_settings.LLM_NETWORK_ISOLATION|yesno:"True,False" }}
+LLM_FORCE_ISOLATION={{ current_settings.LLM_FORCE_ISOLATION|yesno:"True,False" }}
+OLLAMA_API_URL={{ current_settings.OLLAMA_API_URL }}
+OLLAMA_DEFAULT_MODEL={{ current_settings.OLLAMA_DEFAULT_MODEL }}
+LOCAL_EMBEDDING_MODEL_PATH={{ current_settings.LOCAL_EMBEDDING_MODEL_PATH }}
+LOCAL_EMBEDDING_TOKENIZER_PATH={{ current_settings.LOCAL_EMBEDDING_TOKENIZER_PATH }}</pre>
+    </div>
+    <p class="help">Settings location: <code>{{ current_settings.ENV_FILE_PATH }}</code></p>
+  </div>
+  
+  <!-- Recommendations -->
+  {% if not status.isolated or status.errors %}
+    <div class="recommendation-box">
+      <h2>Recommendations</h2>
+      <p>Based on your current setup, here are recommendations to properly configure LLM network isolation:</p>
+      
+      {% if recommendations.ollama_installed %}
+        <h3>Ollama Configuration</h3>
+        <p>Ollama is installed at <code>{{ recommendations.ollama_path }}</code>.</p>
+        {% if recommendations.available_models %}
+          <p>Available models:</p>
+          <ul>
+            {% for model in recommendations.available_models %}
+              <li><code>{{ model }}</code></li>
+            {% endfor %}
+          </ul>
+        {% else %}
+          <p>No models available. Please run:</p>
+          <div class="code-block">
+            <pre>ollama pull llama3</pre>
+          </div>
+        {% endif %}
+      {% else %}
+        <h3>Ollama Installation</h3>
+        <p>Ollama is not installed. Please install it with:</p>
+        <div class="code-block">
+          <pre>{% for cmd in recommendations.installation_instructions %}{{ cmd }}
+{% endfor %}</pre>
+        </div>
+      {% endif %}
+      
+      <h3>Recommended Settings</h3>
+      <div class="code-block">
+        <pre>{% for key, value in recommendations.items %}{% if key != 'ollama_installed' and key != 'ollama_path' and key != 'available_models' and key != 'installation_instructions' and key != 'embedding_model_instructions' and key != 'embedding_dependencies' and key != 'network_rules' %}{{ key }}={{ value }}
+{% endif %}{% endfor %}</pre>
+      </div>
+      
+      {% if recommendations.embedding_dependencies %}
+        <h3>Embedding Model Dependencies</h3>
+        <p>Install required packages:</p>
+        <div class="code-block">
+          <pre>{% for cmd in recommendations.embedding_dependencies %}{{ cmd }}
+{% endfor %}</pre>
+        </div>
+      {% endif %}
+      
+      {% if recommendations.embedding_model_instructions %}
+        <h3>Embedding Model Setup</h3>
+        <p>Download and convert the embedding model:</p>
+        <div class="code-block">
+          <pre>{% for cmd in recommendations.embedding_model_instructions %}{{ cmd }}
+{% endfor %}</pre>
+        </div>
+      {% endif %}
+      
+      {% if recommendations.network_rules %}
+        <h3>Network Rules</h3>
+        <p>Configure your firewall with the following rules:</p>
+        <ul>
+          {% for rule in recommendations.network_rules %}
+            <li>{{ rule }}</li>
+          {% endfor %}
+        </ul>
+      {% endif %}
+    </div>
+  {% endif %}
+  
+  <div class="help">
+    <h3>About LLM Network Isolation</h3>
+    <p>
+      LLM network isolation ensures all language model operations are performed locally within your network, 
+      without relying on external APIs. This enhances security and data privacy by keeping sensitive information 
+      within your controlled environment.
+    </p>
+    <p>
+      When isolation is enabled, the system uses <a href="https://ollama.com/" target="_blank">Ollama</a> 
+      for text generation and local embedding models through ONNX Runtime for vector embeddings.
+    </p>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,257 @@
+{% extends "admin/change_list.html" %}
+{% load static %}
+
+{% block content_title %}
+  <h1>Analytics Metrics Dashboard</h1>
+  <div style="float: right; margin-top: -2.5em;">
+    <a href="{% url 'admin:analytics_dashboard' %}" class="button">View Full Dashboard</a>
+  </div>
+{% endblock %}
+
+{% block extrahead %}
+  {{ block.super }}
+  <style>
+    .chart-container {
+      position: relative;
+      height: 300px;
+      margin-bottom: 40px;
+    }
+    .metrics-summary {
+      display: flex;
+      flex-wrap: wrap;
+      margin: 20px 0;
+    }
+    .metric-box {
+      flex: 1;
+      min-width: 150px;
+      text-align: center;
+      padding: 15px;
+      margin: 0 10px 10px 0;
+      background-color: #f5f5f5;
+      border-radius: 4px;
+    }
+    .metric-value {
+      font-size: 24px;
+      font-weight: bold;
+    }
+    .metric-label {
+      color: #666;
+      margin-top: 5px;
+    }
+    .query-filter {
+      margin: 20px 0;
+      padding: 15px;
+      background-color: #f9f9f9;
+      border-radius: 4px;
+    }
+  </style>
+{% endblock %}
+
+{% block result_list %}
+  <div class="query-filter">
+    <label for="date-range">Date Range:</label>
+    <select id="date-range" onchange="updateCharts()">
+      <option value="7">Last 7 days</option>
+      <option value="30" selected>Last 30 days</option>
+      <option value="90">Last 90 days</option>
+    </select>
+    <button class="button" onclick="updateCharts()">Update</button>
+  </div>
+
+  <div class="metrics-summary" id="metrics-summary">
+    <!-- Metrics will be populated by JavaScript -->
+  </div>
+
+  <div class="chart-container">
+    <h3>Daily Queries & Users</h3>
+    <canvas id="queries-chart"></canvas>
+  </div>
+
+  <div class="chart-container">
+    <h3>Response Time Trends</h3>
+    <canvas id="response-time-chart"></canvas>
+  </div>
+
+  {{ block.super }}
+  
+  <div style="text-align: center; margin: 20px 0;">
+    <a href="{% url 'admin:analytics_dashboard' %}" class="button">View Full Dashboard</a>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@3.7.1/dist/chart.min.js"></script>
+  <script>
+    // Chart instances
+    let queriesChart;
+    let responseTimeChart;
+    
+    // Initialize charts
+    document.addEventListener('DOMContentLoaded', function() {
+      updateCharts();
+    });
+    
+    // Update charts when date range changes
+    function updateCharts() {
+      const days = document.getElementById('date-range').value;
+      fetchMetricsData(days);
+    }
+    
+    // Fetch metrics data
+    function fetchMetricsData(days) {
+      fetch(`{% url 'admin:analytics_metrics_data' %}?days=${days}`)
+        .then(response => response.json())
+        .then(data => {
+          updateSummaryMetrics(data);
+          updateQueriesChart(data.time_series);
+          updateResponseTimeChart(data.time_series);
+        })
+        .catch(error => {
+          console.error('Error fetching metrics data:', error);
+        });
+    }
+    
+    // Update summary metrics
+    function updateSummaryMetrics(data) {
+      // Calculate summary metrics from time series data
+      const totalQueries = data.time_series.queries.reduce((a, b) => a + b, 0);
+      const maxUsers = Math.max(...data.time_series.users);
+      const avgResponseTime = calculateAverage(data.time_series.response_times).toFixed(0);
+      const totalErrors = data.time_series.errors.reduce((a, b) => a + b, 0);
+      const errorRate = (totalErrors / totalQueries * 100).toFixed(1);
+      
+      // Create metrics summary HTML
+      const metricsHtml = `
+        <div class="metric-box">
+          <div class="metric-value">${totalQueries.toLocaleString()}</div>
+          <div class="metric-label">Total Queries</div>
+        </div>
+        <div class="metric-box">
+          <div class="metric-value">${maxUsers.toLocaleString()}</div>
+          <div class="metric-label">Active Users</div>
+        </div>
+        <div class="metric-box">
+          <div class="metric-value">${avgResponseTime} ms</div>
+          <div class="metric-label">Avg Response Time</div>
+        </div>
+        <div class="metric-box">
+          <div class="metric-value">${errorRate}%</div>
+          <div class="metric-label">Error Rate</div>
+        </div>
+      `;
+      
+      // Update the metrics summary element
+      document.getElementById('metrics-summary').innerHTML = metricsHtml;
+    }
+    
+    // Update queries chart
+    function updateQueriesChart(timeSeriesData) {
+      const ctx = document.getElementById('queries-chart').getContext('2d');
+      
+      // Destroy existing chart if it exists
+      if (queriesChart) {
+        queriesChart.destroy();
+      }
+      
+      queriesChart = new Chart(ctx, {
+        type: 'bar',
+        data: {
+          labels: timeSeriesData.dates,
+          datasets: [
+            {
+              label: 'Queries',
+              data: timeSeriesData.queries,
+              backgroundColor: 'rgba(54, 162, 235, 0.7)',
+              order: 2
+            },
+            {
+              label: 'Users',
+              data: timeSeriesData.users,
+              type: 'line',
+              borderColor: 'rgba(255, 99, 132, 1)',
+              backgroundColor: 'rgba(255, 99, 132, 0.1)',
+              fill: true,
+              tension: 0.4,
+              order: 1
+            }
+          ]
+        },
+        options: {
+          scales: {
+            y: {
+              beginAtZero: true
+            }
+          },
+          responsive: true,
+          maintainAspectRatio: false
+        }
+      });
+    }
+    
+    // Update response time chart
+    function updateResponseTimeChart(timeSeriesData) {
+      const ctx = document.getElementById('response-time-chart').getContext('2d');
+      
+      // Destroy existing chart if it exists
+      if (responseTimeChart) {
+        responseTimeChart.destroy();
+      }
+      
+      responseTimeChart = new Chart(ctx, {
+        type: 'line',
+        data: {
+          labels: timeSeriesData.dates,
+          datasets: [
+            {
+              label: 'Response Time (ms)',
+              data: timeSeriesData.response_times,
+              borderColor: 'rgba(75, 192, 192, 1)',
+              backgroundColor: 'rgba(75, 192, 192, 0.2)',
+              fill: true,
+              tension: 0.4
+            },
+            {
+              label: 'Errors',
+              data: timeSeriesData.errors,
+              borderColor: 'rgba(255, 99, 132, 1)',
+              backgroundColor: 'rgba(255, 99, 132, 0.1)',
+              fill: true,
+              tension: 0.4,
+              yAxisID: 'y1'
+            }
+          ]
+        },
+        options: {
+          scales: {
+            y: {
+              beginAtZero: true,
+              title: {
+                display: true,
+                text: 'Response Time (ms)'
+              }
+            },
+            y1: {
+              position: 'right',
+              beginAtZero: true,
+              title: {
+                display: true,
+                text: 'Error Count'
+              },
+              grid: {
+                drawOnChartArea: false
+              }
+            }
+          },
+          responsive: true,
+          maintainAspectRatio: false
+        }
+      });
+    }
+    
+    // Helper function to calculate average
+    function calculateAverage(array) {
+      if (array.length === 0) return 0;
+      return array.reduce((a, b) => a + b, 0) / array.length;
+    }
+  </script>
+{% endblock %}
+
+{% block pagination %}{% endblock %}

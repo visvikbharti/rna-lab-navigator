@@ -1,0 +1,48 @@
+{% extends "admin/change_list.html" %}
+{% load i18n admin_urls static admin_list %}
+
+{% block object-tools %}
+  <div>
+    <form action="{% url 'admin:trigger_backup' %}" method="GET">
+      <input type="submit" value="Trigger Backup" class="default" name="_trigger_backup" style="float: right; margin-left: 10px;" />
+    </form>
+  </div>
+  <br/>
+{% endblock %}
+
+{% block result_list %}
+  <table id="result_list">
+    <thead>
+      <tr>
+        <th><div class="text"><span>Backup ID</span></div></th>
+        <th><div class="text"><span>Type</span></div></th>
+        <th><div class="text"><span>Created At</span></div></th>
+        <th><div class="text"><span>Size</span></div></th>
+        <th><div class="text"><span>Status</span></div></th>
+        <th><div class="text"><span>Actions</span></div></th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for backup in backups %}
+        <tr class="{% cycle 'row1' 'row2' %}">
+          <td>{{ backup.backup_id }}</td>
+          <td>{{ backup.backup_type }}</td>
+          <td>{{ backup.created_at|date:"Y-m-d H:i:s" }}</td>
+          <td>{{ backup.size }}</td>
+          <td>{{ backup.status }}</td>
+          <td>
+            {% if backup.status == 'completed' %}
+              <a href="{% url 'admin:restore_backup' backup.backup_id %}" class="button">Restore</a>
+            {% else %}
+              -
+            {% endif %}
+          </td>
+        </tr>
+      {% empty %}
+        <tr><td colspan="6">No backups found.</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+{% endblock %}
+
+{% block pagination %}{% endblock %}

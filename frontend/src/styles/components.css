@@ -1,0 +1,585 @@
+/* Component Styles - RNA Lab Navigator
+ * Enhanced component utilities and patterns
+ * Phase 1: Foundation Setup
+ */
+
+/* =========================================
+   BUTTON COMPONENTS
+   ========================================= */
+
+/* Primary Button - RNA Teal Theme */
+.btn-primary {
+  @apply inline-flex items-center justify-center gap-2;
+  @apply px-6 py-3 text-white font-medium;
+  @apply bg-rna-bright-teal hover:bg-rna-deep-teal;
+  @apply rounded-lg transition-all duration-200 ease-smooth;
+  @apply focus-ring border-0 cursor-pointer;
+  @apply transform hover:-translate-y-0.5 hover:shadow-teal;
+  @apply disabled:bg-rna-silver disabled:cursor-not-allowed;
+  @apply disabled:transform-none disabled:shadow-none;
+}
+
+.btn-primary:active {
+  @apply translate-y-0;
+}
+
+/* Secondary Button */
+.btn-secondary {
+  @apply inline-flex items-center justify-center gap-2;
+  @apply px-6 py-3 text-rna-deep-teal font-medium;
+  @apply bg-white hover:bg-rna-bright-teal hover:text-white;
+  @apply border border-rna-bright-teal rounded-lg;
+  @apply transition-all duration-200 ease-smooth;
+  @apply focus-ring cursor-pointer;
+  @apply transform hover:-translate-y-0.5 hover:shadow-teal;
+}
+
+/* Ghost Button */
+.btn-ghost {
+  @apply inline-flex items-center justify-center gap-2;
+  @apply px-4 py-2 text-rna-graphite font-medium;
+  @apply bg-transparent hover:bg-rna-pearl;
+  @apply rounded-lg transition-all duration-150 ease-smooth;
+  @apply focus-ring cursor-pointer;
+}
+
+/* Icon Button */
+.btn-icon {
+  @apply inline-flex items-center justify-center;
+  @apply w-10 h-10 p-2;
+  @apply bg-transparent hover:bg-rna-pearl;
+  @apply rounded-lg transition-all duration-150 ease-smooth;
+  @apply focus-ring cursor-pointer;
+  @apply text-rna-graphite hover:text-rna-deep-teal;
+}
+
+/* Floating Action Button */
+.btn-fab {
+  @apply fixed bottom-6 right-6 z-50;
+  @apply w-14 h-14 p-0;
+  @apply bg-rna-bright-teal hover:bg-rna-deep-teal;
+  @apply text-white rounded-full shadow-xl hover:shadow-glow;
+  @apply transition-all duration-200 ease-smooth;
+  @apply focus-ring cursor-pointer;
+  @apply transform hover:scale-110 active:scale-105;
+}
+
+/* =========================================
+   CARD COMPONENTS
+   ========================================= */
+
+/* Base Card */
+.card {
+  @apply bg-white rounded-xl shadow-md;
+  @apply border border-gray-100;
+  @apply overflow-hidden;
+}
+
+/* Interactive Card */
+.card-interactive {
+  @apply card cursor-pointer;
+  @apply transition-all duration-200 ease-smooth;
+  @apply hover:-translate-y-1 hover:shadow-xl;
+  @apply focus-ring;
+}
+
+.card-interactive:active {
+  @apply translate-y-0;
+}
+
+/* Glass Card */
+.card-glass {
+  @apply glass rounded-xl shadow-lg;
+  @apply border border-white/20;
+  @apply overflow-hidden;
+}
+
+/* Gradient Card */
+.card-gradient {
+  @apply bg-gradient-card rounded-xl shadow-lg;
+  @apply border border-white/50;
+  @apply overflow-hidden;
+}
+
+/* Feature Card */
+.card-feature {
+  @apply card-interactive p-6;
+  @apply text-center;
+}
+
+.card-feature-icon {
+  @apply w-12 h-12 mx-auto mb-4;
+  @apply text-rna-bright-teal;
+}
+
+.card-feature-title {
+  @apply text-h4 font-semibold text-rna-charcoal mb-2;
+}
+
+.card-feature-description {
+  @apply text-body text-rna-graphite;
+}
+
+/* =========================================
+   INPUT COMPONENTS
+   ========================================= */
+
+/* Base Input */
+.input {
+  @apply w-full px-4 py-3;
+  @apply bg-white border border-gray-300;
+  @apply rounded-lg font-primary text-body;
+  @apply transition-all duration-150 ease-smooth;
+  @apply focus:outline-none focus:border-rna-bright-teal;
+  @apply focus:ring-2 focus:ring-rna-bright-teal/20;
+  @apply placeholder:text-rna-silver;
+}
+
+.input:invalid {
+  @apply border-rna-error-red focus:border-rna-error-red;
+  @apply focus:ring-rna-error-red/20;
+}
+
+/* Search Input */
+.input-search {
+  @apply input pl-12;
+  @apply bg-rna-pearl/50 border-transparent;
+  @apply focus:bg-white focus:border-rna-bright-teal;
+}
+
+/* Textarea */
+.textarea {
+  @apply input resize-y min-h-[120px];
+}
+
+/* Select */
+.select {
+  @apply input appearance-none;
+  @apply bg-white;
+  background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='m6 8 4 4 4-4'/%3e%3c/svg%3e");
+  background-position: right 0.75rem center;
+  background-repeat: no-repeat;
+  background-size: 1.5em 1.5em;
+  padding-right: 2.5rem;
+}
+
+/* =========================================
+   BADGE & CHIP COMPONENTS
+   ========================================= */
+
+/* Base Badge */
+.badge {
+  @apply inline-flex items-center gap-1;
+  @apply px-2.5 py-1 text-small font-medium;
+  @apply rounded-full;
+}
+
+/* Badge Variants */
+.badge-primary {
+  @apply badge bg-rna-bright-teal/10 text-rna-deep-teal;
+}
+
+.badge-secondary {
+  @apply badge bg-rna-pearl text-rna-graphite;
+}
+
+.badge-success {
+  @apply badge bg-rna-enzyme-green/10 text-rna-enzyme-green;
+}
+
+.badge-warning {
+  @apply badge bg-rna-warning-amber/10 text-rna-warning-amber;
+}
+
+.badge-error {
+  @apply badge bg-rna-error-red/10 text-rna-error-red;
+}
+
+.badge-info {
+  @apply badge bg-rna-info-indigo/10 text-rna-info-indigo;
+}
+
+/* Chip (Interactive Badge) */
+.chip {
+  @apply badge cursor-pointer;
+  @apply transition-all duration-150 ease-smooth;
+  @apply hover:scale-105 focus-ring;
+}
+
+.chip-removable {
+  @apply chip pr-1;
+}
+
+.chip-remove-btn {
+  @apply ml-1 w-4 h-4 p-0.5;
+  @apply text-current hover:bg-black/10;
+  @apply rounded-full transition-colors duration-150;
+  @apply cursor-pointer;
+}
+
+/* =========================================
+   NAVIGATION COMPONENTS
+   ========================================= */
+
+/* Navigation Menu */
+.nav-menu {
+  @apply flex items-center gap-1;
+}
+
+.nav-item {
+  @apply px-3 py-2 text-rna-graphite;
+  @apply rounded-lg transition-colors duration-150;
+  @apply hover:text-rna-deep-teal hover:bg-rna-pearl;
+  @apply focus-ring cursor-pointer;
+}
+
+.nav-item.active {
+  @apply text-rna-deep-teal bg-rna-bright-teal/10;
+}
+
+/* Breadcrumb */
+.breadcrumb {
+  @apply flex items-center gap-2 text-small;
+}
+
+.breadcrumb-item {
+  @apply text-rna-graphite hover:text-rna-deep-teal;
+  @apply transition-colors duration-150;
+}
+
+.breadcrumb-item:not(:last-child)::after {
+  content: '/';
+  @apply ml-2 text-rna-silver;
+}
+
+.breadcrumb-item.active {
+  @apply text-rna-deep-teal font-medium;
+}
+
+/* Tabs */
+.tabs {
+  @apply border-b border-gray-200;
+}
+
+.tab-list {
+  @apply flex items-center gap-6;
+}
+
+.tab {
+  @apply px-1 py-4 text-rna-graphite font-medium;
+  @apply border-b-2 border-transparent;
+  @apply transition-all duration-200;
+  @apply hover:text-rna-deep-teal hover:border-rna-silver;
+  @apply focus-ring cursor-pointer;
+}
+
+.tab.active {
+  @apply text-rna-deep-teal border-rna-bright-teal;
+}
+
+/* =========================================
+   MODAL & OVERLAY COMPONENTS
+   ========================================= */
+
+/* Modal Overlay */
+.modal-overlay {
+  @apply fixed inset-0 z-50;
+  @apply bg-black/50 backdrop-blur-sm;
+  @apply transition-opacity duration-200;
+}
+
+/* Modal Container */
+.modal {
+  @apply fixed inset-0 z-50;
+  @apply flex items-center justify-center p-4;
+  @apply pointer-events-none;
+}
+
+.modal-content {
+  @apply relative w-full max-w-lg;
+  @apply bg-white rounded-2xl shadow-2xl;
+  @apply pointer-events-auto;
+  @apply transform transition-all duration-200;
+}
+
+/* Popover */
+.popover {
+  @apply absolute z-50;
+  @apply bg-white rounded-lg shadow-xl;
+  @apply border border-gray-200;
+  @apply p-4 max-w-sm;
+}
+
+.popover-arrow {
+  @apply absolute w-3 h-3;
+  @apply bg-white border-l border-t border-gray-200;
+  @apply transform rotate-45;
+}
+
+/* Tooltip */
+.tooltip {
+  @apply absolute z-40;
+  @apply px-2 py-1 text-small text-white;
+  @apply bg-rna-charcoal rounded;
+  @apply pointer-events-none;
+  @apply opacity-0 transition-opacity duration-150;
+}
+
+.tooltip.show {
+  @apply opacity-100;
+}
+
+/* =========================================
+   LIST & TABLE COMPONENTS
+   ========================================= */
+
+/* List */
+.list {
+  @apply space-y-1;
+}
+
+.list-item {
+  @apply flex items-center gap-3 p-3;
+  @apply rounded-lg transition-colors duration-150;
+  @apply hover:bg-rna-pearl cursor-pointer;
+  @apply focus-ring;
+}
+
+.list-item-content {
+  @apply flex-1 min-w-0;
+}
+
+.list-item-title {
+  @apply font-medium text-rna-charcoal;
+  @apply truncate;
+}
+
+.list-item-subtitle {
+  @apply text-small text-rna-graphite;
+  @apply truncate;
+}
+
+/* Table */
+.table {
+  @apply w-full border-collapse;
+}
+
+.table th {
+  @apply px-4 py-3 text-left;
+  @apply text-small font-semibold text-rna-graphite;
+  @apply bg-rna-pearl border-b border-gray-200;
+}
+
+.table td {
+  @apply px-4 py-3;
+  @apply border-b border-gray-100;
+  @apply text-body text-rna-charcoal;
+}
+
+.table tr:hover td {
+  @apply bg-rna-pearl/50;
+}
+
+/* =========================================
+   LOADING & STATE COMPONENTS
+   ========================================= */
+
+/* Loading Spinner */
+.spinner {
+  @apply w-6 h-6 border-2 border-gray-200;
+  @apply border-t-rna-bright-teal rounded-full;
+  @apply animate-spin;
+}
+
+.spinner-lg {
+  @apply w-8 h-8 border-2;
+}
+
+.spinner-sm {
+  @apply w-4 h-4 border;
+}
+
+/* Progress Bar */
+.progress {
+  @apply w-full h-2 bg-gray-200 rounded-full overflow-hidden;
+}
+
+.progress-bar {
+  @apply h-full bg-rna-bright-teal;
+  @apply transition-all duration-300 ease-smooth;
+  @apply rounded-full;
+}
+
+.progress-bar.animated {
+  background-image: linear-gradient(
+    45deg,
+    rgba(255, 255, 255, 0.2) 25%,
+    transparent 25%,
+    transparent 50%,
+    rgba(255, 255, 255, 0.2) 50%,
+    rgba(255, 255, 255, 0.2) 75%,
+    transparent 75%,
+    transparent
+  );
+  background-size: 1rem 1rem;
+  animation: progress-stripes 1s linear infinite;
+}
+
+@keyframes progress-stripes {
+  0% { background-position: 0 0; }
+  100% { background-position: 1rem 0; }
+}
+
+/* Empty State */
+.empty-state {
+  @apply text-center py-12 px-6;
+}
+
+.empty-state-icon {
+  @apply w-16 h-16 mx-auto mb-4;
+  @apply text-rna-silver;
+}
+
+.empty-state-title {
+  @apply text-h3 font-semibold text-rna-charcoal mb-2;
+}
+
+.empty-state-description {
+  @apply text-body text-rna-graphite mb-6;
+  @apply max-w-md mx-auto;
+}
+
+/* =========================================
+   FORM & VALIDATION COMPONENTS
+   ========================================= */
+
+/* Form Group */
+.form-group {
+  @apply space-y-2;
+}
+
+/* Form Label */
+.form-label {
+  @apply block text-small font-medium text-rna-charcoal;
+}
+
+.form-label.required::after {
+  content: ' *';
+  @apply text-rna-error-red;
+}
+
+/* Form Help Text */
+.form-help {
+  @apply text-micro text-rna-graphite;
+}
+
+/* Form Error */
+.form-error {
+  @apply text-micro text-rna-error-red;
+  @apply flex items-center gap-1;
+}
+
+/* Form Success */
+.form-success {
+  @apply text-micro text-rna-enzyme-green;
+  @apply flex items-center gap-1;
+}
+
+/* Field Group */
+.field-group {
+  @apply relative;
+}
+
+.field-group-addon {
+  @apply absolute left-3 top-1/2 transform -translate-y-1/2;
+  @apply text-rna-silver;
+  @apply pointer-events-none;
+}
+
+.field-group-addon + .input {
+  @apply pl-10;
+}
+
+/* =========================================
+   RESPONSIVE & UTILITY PATTERNS
+   ========================================= */
+
+/* Container */
+.container {
+  @apply w-full max-w-container mx-auto px-4;
+}
+
+.container-lg {
+  @apply w-full max-w-container-lg mx-auto px-4;
+}
+
+/* Stack */
+.stack {
+  @apply flex flex-col;
+}
+
+.stack-sm {
+  @apply stack gap-2;
+}
+
+.stack-md {
+  @apply stack gap-4;
+}
+
+.stack-lg {
+  @apply stack gap-6;
+}
+
+.stack-xl {
+  @apply stack gap-8;
+}
+
+/* Cluster */
+.cluster {
+  @apply flex flex-wrap items-center;
+}
+
+.cluster-sm {
+  @apply cluster gap-2;
+}
+
+.cluster-md {
+  @apply cluster gap-4;
+}
+
+.cluster-lg {
+  @apply cluster gap-6;
+}
+
+/* Grid */
+.grid-auto {
+  @apply grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6;
+}
+
+.grid-responsive {
+  @apply grid gap-6;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+}
+
+/* Sidebar Layout */
+.sidebar-layout {
+  @apply flex gap-6;
+}
+
+.sidebar {
+  @apply w-64 flex-shrink-0;
+}
+
+.main-content {
+  @apply flex-1 min-w-0;
+}
+
+@media (max-width: 768px) {
+  .sidebar-layout {
+    @apply flex-col;
+  }
+  
+  .sidebar {
+    @apply w-full;
+  }
+}

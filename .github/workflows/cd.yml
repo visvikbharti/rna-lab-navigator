@@ -1,0 +1,180 @@
+name: RNA Lab Navigator CD
+
+on:
+  push:
+    branches: [ main, master ]
+    tags: [ 'v*' ]
+
+jobs:
+  deploy-staging:
+    if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master'
+    runs-on: ubuntu-latest
+    environment: staging
+    
+    steps:
+    - uses: actions/checkout@v3
+    
+    - name: Set up Railway CLI
+      run: |
+        npm install -g @railway/cli
+    
+    - name: Deploy Backend to Railway
+      env:
+        RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
+      run: |
+        cd backend
+        railway up --service rna-lab-backend-staging
+    
+    - name: Set up Vercel CLI
+      run: |
+        npm install -g vercel
+    
+    - name: Deploy Frontend to Vercel
+      env:
+        VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+        VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+        VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+      run: |
+        cd frontend
+        vercel deploy --token $VERCEL_TOKEN --prod
+    
+    - name: Run Smoke Tests
+      env:
+        API_URL: ${{ secrets.STAGING_API_URL }}
+        APP_URL: ${{ secrets.STAGING_APP_URL }}
+      run: |
+        # Install dependencies for smoke tests
+        pip install requests pytest
+        
+        # Run smoke tests
+        python -c "
+        import requests
+        import sys
+        import time
+        
+        print('Running smoke tests against staging environment...')
+        
+        # Test backend health endpoint
+        try:
+            backend_health = requests.get('$API_URL/api/health/')
+            assert backend_health.status_code == 200
+            print('✅ Backend health check passed')
+        except Exception as e:
+            print('❌ Backend health check failed:', e)
+            sys.exit(1)
+            
+        # Test frontend is accessible
+        try:
+            frontend = requests.get('$APP_URL')
+            assert frontend.status_code == 200
+            print('✅ Frontend accessibility check passed')
+        except Exception as e:
+            print('❌ Frontend accessibility check failed:', e)
+            sys.exit(1)
+            
+        print('All smoke tests passed!')
+        "
+
+  deploy-production:
+    if: startsWith(github.ref, 'refs/tags/v')
+    runs-on: ubuntu-latest
+    environment: production
+    needs: [deploy-staging]
+    
+    steps:
+    - uses: actions/checkout@v3
+    
+    - name: Set up Railway CLI
+      run: |
+        npm install -g @railway/cli
+    
+    - name: Deploy Backend to Railway
+      env:
+        RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
+      run: |
+        cd backend
+        railway up --service rna-lab-backend-production
+    
+    - name: Set up Vercel CLI
+      run: |
+        npm install -g vercel
+    
+    - name: Deploy Frontend to Vercel
+      env:
+        VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+        VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+        VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID_PROD }}
+      run: |
+        cd frontend
+        vercel deploy --token $VERCEL_TOKEN --prod --scope production
+    
+    - name: Create GitHub Release
+      uses: softprops/action-gh-release@v1
+      with:
+        name: Release ${{ github.ref_name }}
+        draft: false
+        prerelease: false
+        body: |
+          🚀 RNA Lab Navigator ${{ github.ref_name }}
+          
+          ### What's Changed
+          
+          <!-- This will be filled in automatically from PR descriptions -->
+          ${{ join(github.event.commits.*.message, '\n') }}
+          
+          ### Deployment Status
+          
+          - Backend: ✅ Deployed to Railway production environment
+          - Frontend: ✅ Deployed to Vercel production environment
+          
+          ### Documentation
+          
+          [User Guide](https://docs.rna-lab-navigator.org/user-guide)
+          [API Documentation](https://docs.rna-lab-navigator.org/api)
+          
+          ### Troubleshooting
+          
+          If you encounter any issues, please contact the development team.
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    
+    - name: Run Production Validation Tests
+      env:
+        API_URL: ${{ secrets.PRODUCTION_API_URL }}
+        APP_URL: ${{ secrets.PRODUCTION_APP_URL }}
+      run: |
+        # Install dependencies for validation tests
+        pip install requests pytest
+        
+        # Run validation tests
+        python -c "
+        import requests
+        import sys
+        import time
+        
+        print('Running validation tests against production environment...')
+        
+        # Wait for the deployment to fully propagate
+        time.sleep(60)
+        
+        # Test backend health endpoint
+        try:
+            backend_health = requests.get('$API_URL/api/health/')
+            assert backend_health.status_code == 200
+            assert backend_health.json().get('status') == 'ok'
+            print('✅ Backend health check passed')
+        except Exception as e:
+            print('❌ Backend health check failed:', e)
+            sys.exit(1)
+            
+        # Test frontend is accessible
+        try:
+            frontend = requests.get('$APP_URL')
+            assert frontend.status_code == 200
+            print('✅ Frontend accessibility check passed')
+        except Exception as e:
+            print('❌ Frontend accessibility check failed:', e)
+            sys.exit(1)
+            
+        print('All validation tests passed!')
+        "

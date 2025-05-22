@@ -1,0 +1,91 @@
+name: Security Checks
+
+on:
+  push:
+    branches: [ main, master ]
+  pull_request:
+    branches: [ main, master ]
+  # Run security checks weekly
+  schedule:
+    - cron: '0 0 * * 0'  # Run at midnight on Sundays
+
+jobs:
+  security-checks:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v3
+    
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.10'
+        
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r backend/requirements.txt
+        # Additional security tools
+        pip install bandit safety detect-secrets
+        
+    - name: Run bandit
+      run: |
+        bandit -r backend/ -ll -ii -x backend/tests/,backend/venv/
+        
+    - name: Check for secrets
+      run: |
+        detect-secrets scan --baseline .secrets.baseline || true
+        
+    - name: Check Python package vulnerabilities
+      run: |
+        safety check
+        
+    - name: Run Django security checks
+      run: |
+        cd backend
+        python manage.py check --deploy
+        
+    - name: Run security verification
+      run: |
+        cd backend
+        python manage.py verify_security --output security-report.json
+        
+    - name: Check security headers
+      run: |
+        cd backend
+        python manage.py check_security --output headers-report.json
+        
+    - name: Upload security reports
+      uses: actions/upload-artifact@v3
+      with:
+        name: security-reports
+        path: |
+          backend/security-report.json
+          backend/headers-report.json
+
+  npm-security:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v3
+    
+    - name: Set up Node
+      uses: actions/setup-node@v3
+      with:
+        node-version: '16'
+        
+    - name: Install dependencies
+      run: |
+        cd frontend
+        npm ci
+        
+    - name: Run npm audit
+      run: |
+        cd frontend
+        npm audit --json > npm-audit.json || true
+        
+    - name: Upload npm audit results
+      uses: actions/upload-artifact@v3
+      with:
+        name: npm-audit
+        path: frontend/npm-audit.json

@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>RNA Lab Navigator Demo</title>
+  <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+</head>
+<body class="bg-gray-100 min-h-screen">
+  <div class="container mx-auto p-4">
+    <header class="bg-white p-4 rounded-lg shadow mb-6">
+      <h1 class="text-2xl font-bold text-indigo-700">RNA Lab Navigator</h1>
+      <p class="text-gray-600">Your RNA Biology Lab Assistant</p>
+    </header>
+    
+    <div class="bg-white p-6 rounded-lg shadow mb-6">
+      <h2 class="text-xl font-semibold mb-4">Ask a Question</h2>
+      <div class="flex flex-col">
+        <div class="mb-4">
+          <select id="docType" class="w-full p-2 border rounded">
+            <option value="all">All Documents</option>
+            <option value="protocol">Protocols</option>
+            <option value="paper">Papers</option>
+            <option value="thesis">Theses</option>
+          </select>
+        </div>
+        <div class="flex">
+          <input 
+            id="queryInput" 
+            type="text" 
+            placeholder="Ask about RNA protocols, papers, or theses..." 
+            class="flex-grow p-2 border rounded-l"
+          >
+          <button 
+            id="submitBtn"
+            class="bg-indigo-600 text-white px-4 py-2 rounded-r hover:bg-indigo-700"
+          >
+            Submit
+          </button>
+        </div>
+      </div>
+    </div>
+    
+    <div id="loadingIndicator" class="hidden bg-white p-6 rounded-lg shadow mb-6">
+      <div class="animate-pulse flex space-x-4">
+        <div class="flex-1 space-y-4 py-1">
+          <div class="h-4 bg-gray-200 rounded w-3/4"></div>
+          <div class="space-y-2">
+            <div class="h-4 bg-gray-200 rounded"></div>
+            <div class="h-4 bg-gray-200 rounded w-5/6"></div>
+          </div>
+        </div>
+      </div>
+      <p class="text-gray-500 mt-2">Processing your question...</p>
+    </div>
+    
+    <div id="answerContainer" class="hidden bg-white p-6 rounded-lg shadow">
+      <h2 class="text-xl font-semibold mb-4">Answer</h2>
+      <div id="answerText" class="mb-4 text-gray-800"></div>
+      
+      <h3 class="font-medium text-gray-700 mb-2">Sources:</h3>
+      <ul id="sourcesList" class="list-disc pl-5 text-gray-600"></ul>
+    </div>
+  </div>
+  
+  <script>
+    // Function to call backend API
+    async function callApi(query, docType) {
+      // For demo purposes, we'll use a mock response
+      // In a real scenario, we would make a fetch call to the backend API
+      return new Promise((resolve) => {
+        setTimeout(() => {
+          // Sample responses based on document type
+          let response;
+          
+          if (docType === 'protocol' || query.toLowerCase().includes('extraction') || query.toLowerCase().includes('protocol')) {
+            response = {
+              answer: "Based on the documents I've analyzed, RNA extraction protocols typically involve several critical steps. According to 'Protocol RNAextraction.pdf', you should start by lysing the cells with a guanidium thiocyanate-based solution like TRIzol, which simultaneously denatures proteins and inactivates RNases. For tissue samples, mechanical disruption is recommended prior to TRIzol treatment. The RNA is then separated from DNA and proteins using a chloroform extraction, followed by isopropanol precipitation to isolate the RNA. Multiple wash steps with ethanol are essential to remove impurities. The protocol emphasizes keeping samples cold throughout and using RNase-free materials to prevent degradation.",
+              sources: [
+                {
+                  id: 1,
+                  title: "RNA Extraction Protocol",
+                  doc_type: "protocol",
+                  author: "Kumar et al.",
+                  year: "2023"
+                },
+                {
+                  id: 2,
+                  title: "TRIzol Reagent Guide",
+                  doc_type: "protocol",
+                  author: "Life Technologies",
+                  year: "2022"
+                }
+              ],
+              confidence_score: 0.92
+            };
+          } else if (docType === 'paper' || query.toLowerCase().includes('paper') || query.toLowerCase().includes('crispr')) {
+            response = {
+              answer: "According to the 2024 Kumar paper in Science Advances, novel thermostable Cas9 variants have been engineered for enhanced precision in gene editing applications. The paper describes how these variants maintain activity at temperatures up to 65°C while demonstrating reduced off-target effects compared to wild-type Cas9. The researchers identified key amino acid substitutions in the REC3 domain that contribute to thermal stability without compromising DNA binding specificity. This advancement is particularly valuable for applications requiring stringent reaction conditions or targeting regions with high GC content that benefit from elevated temperatures to reduce secondary structure formation.",
+              sources: [
+                {
+                  id: 1,
+                  title: "2024_Kumar_ScienceAdv_Thermo_Cas9_Precision",
+                  doc_type: "paper",
+                  author: "Kumar et al.",
+                  year: "2024"
+                },
+                {
+                  id: 2,
+                  title: "2024_Sundaram_NatCommun_enFnCas9_PAMflex",
+                  doc_type: "paper",
+                  author: "Sundaram et al.",
+                  year: "2024"
+                }
+              ],
+              confidence_score: 0.89
+            };
+          } else if (docType === 'thesis' || query.toLowerCase().includes('thesis') || query.toLowerCase().includes('phd')) {
+            response = {
+              answer: "According to Phutela's 2025 PhD thesis, 'Rhythm in RNA Processing Mechanisms,' circadian control of RNA splicing plays a critical role in regulating gene expression patterns across the 24-hour cycle. The thesis demonstrates that key splicing factors, particularly TOBF1 (Chapter 3), exhibit rhythmic binding patterns to pre-mRNA targets, resulting in time-of-day-dependent alternative splicing outcomes. This mechanism was shown to affect approximately 18% of alternatively spliced transcripts in mouse liver cells. The finding provides a molecular explanation for how circadian rhythms can generate temporal diversity in the transcriptome beyond just rhythmic transcription initiation.",
+              sources: [
+                {
+                  id: 1,
+                  title: "2025_Phutela_Rhythm_PhD_Thesis",
+                  doc_type: "thesis",
+                  author: "Phutela",
+                  year: "2025"
+                }
+              ],
+              confidence_score: 0.95
+            };
+          } else {
+            response = {
+              answer: "Based on the documents available in the RNA Lab Navigator, the specific question you're asking doesn't have a clear match in our repository. The query might be outside the scope of our current document collection, or it might need to be rephrased to better match the available content. You might try asking about RNA extraction protocols, CRISPR applications in RNA biology, or circadian rhythm effects on RNA processing, as these topics are well-covered in our repository.",
+              sources: [],
+              confidence_score: 0.25
+            };
+          }
+          
+          resolve(response);
+        }, 1500); // Simulate API delay
+      });
+    }
+
+    document.getElementById('submitBtn').addEventListener('click', async () => {
+      const query = document.getElementById('queryInput').value;
+      const docType = document.getElementById('docType').value;
+      
+      if (!query) return;
+      
+      // Show loading
+      document.getElementById('loadingIndicator').classList.remove('hidden');
+      document.getElementById('answerContainer').classList.add('hidden');
+      
+      try {
+        // Call the API (mock or real)
+        const response = await callApi(query, docType);
+        
+        // Show answer
+        document.getElementById('loadingIndicator').classList.add('hidden');
+        document.getElementById('answerContainer').classList.remove('hidden');
+        
+        // Populate answer
+        document.getElementById('answerText').textContent = response.answer;
+        
+        // Populate sources
+        const sourcesList = document.getElementById('sourcesList');
+        sourcesList.innerHTML = '';
+        
+        if (response.sources && response.sources.length > 0) {
+          response.sources.forEach(source => {
+            const li = document.createElement('li');
+            li.textContent = `${source.title} (${source.author}, ${source.year})`;
+            sourcesList.appendChild(li);
+          });
+        } else {
+          const li = document.createElement('li');
+          li.textContent = "No specific sources found for this query.";
+          sourcesList.appendChild(li);
+        }
+      } catch (error) {
+        console.error('Error submitting query:', error);
+        alert('Error submitting your query. Please try again.');
+        document.getElementById('loadingIndicator').classList.add('hidden');
+      }
+    });
+
+    // Also allow pressing Enter to submit
+    document.getElementById('queryInput').addEventListener('keypress', function(event) {
+      if (event.key === 'Enter') {
+        document.getElementById('submitBtn').click();
+      }
+    });
+  </script>
+</body>
+</html>

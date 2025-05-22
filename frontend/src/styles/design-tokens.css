@@ -1,0 +1,227 @@
+/**
+ * RNA Lab Navigator Design System
+ * Inspired by colossal.com design philosophy
+ * Scientific elegance meets modern interaction design
+ */
+
+:root {
+  /* === COLOR PALETTE === */
+  
+  /* Primary Brand Colors (RNA-Inspired) */
+  --rna-deep-teal: #0d4650;      /* Primary brand, sophisticated depth */
+  --rna-bright-teal: #2dd4bf;    /* Interactive elements, success states */
+  --rna-aqua: #67e8f9;           /* Highlights, accent elements */
+  --rna-seafoam: #a7f3d0;        /* Subtle highlights, hover states */
+
+  /* Neutral Foundation */
+  --rna-charcoal: #1f2937;       /* Primary text, high contrast */
+  --rna-graphite: #64748b;       /* Secondary text, metadata */
+  --rna-silver: #94a3b8;         /* Tertiary text, placeholders */
+  --rna-platinum: #f8fafc;       /* Background, clean foundation */
+  --rna-pearl: #f1f5f9;          /* Card backgrounds, subtle separation */
+  --rna-white: #ffffff;          /* Pure white for emphasis */
+
+  /* Semantic Colors */
+  --rna-helix-blue: #3b82f6;     /* Interactive states, links */
+  --rna-enzyme-green: #10b981;   /* Success, completion states */
+  --rna-warning-amber: #f59e0b;  /* Attention, medium confidence */
+  --rna-error-red: #ef4444;      /* Errors, low confidence */
+  --rna-info-indigo: #6366f1;    /* Information, neutral actions */
+
+  /* === GRADIENTS === */
+  
+  /* Primary Gradients */
+  --gradient-hero: linear-gradient(135deg, var(--rna-deep-teal) 0%, var(--rna-bright-teal) 100%);
+  --gradient-card: linear-gradient(145deg, var(--rna-white) 0%, var(--rna-pearl) 100%);
+  --gradient-interactive: linear-gradient(135deg, var(--rna-helix-blue) 0%, var(--rna-bright-teal) 100%);
+  --gradient-success: linear-gradient(135deg, var(--rna-enzyme-green) 0%, var(--rna-seafoam) 100%);
+  
+  /* Subtle Background Gradients */
+  --gradient-subtle: linear-gradient(180deg, var(--rna-platinum) 0%, var(--rna-pearl) 100%);
+  --gradient-depth: linear-gradient(145deg, var(--rna-white) 0%, var(--rna-platinum) 100%);
+  --gradient-glass: linear-gradient(145deg, rgba(255,255,255,0.9) 0%, rgba(248,250,252,0.8) 100%);
+
+  /* === TYPOGRAPHY === */
+  
+  /* Font Stacks */
+  --font-primary: 'Inter', 'SF Pro Display', -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+  --font-mono: 'SF Mono', 'Monaco', 'Cascadia Code', 'Roboto Mono', monospace;
+  
+  /* Font Sizes */
+  --text-hero: 3.5rem;           /* 56px - Hero headlines */
+  --text-h1: 2.25rem;            /* 36px - Page titles */
+  --text-h2: 1.875rem;           /* 30px - Section headers */
+  --text-h3: 1.5rem;             /* 24px - Component titles */
+  --text-h4: 1.25rem;            /* 20px - Subsection titles */
+  --text-body: 1rem;             /* 16px - Body text */
+  --text-small: 0.875rem;        /* 14px - Captions, metadata */
+  --text-micro: 0.75rem;         /* 12px - Labels, tags */
+  
+  /* Font Weights */
+  --weight-light: 300;
+  --weight-normal: 400;
+  --weight-medium: 500;
+  --weight-semibold: 600;
+  --weight-bold: 700;
+  --weight-black: 900;
+  
+  /* Line Heights */
+  --leading-tight: 1.25;
+  --leading-normal: 1.5;
+  --leading-relaxed: 1.75;
+
+  /* === SPACING === */
+  
+  /* Base Spacing Scale (4px base unit) */
+  --space-1: 0.25rem;            /* 4px */
+  --space-2: 0.5rem;             /* 8px */
+  --space-3: 0.75rem;            /* 12px */
+  --space-4: 1rem;               /* 16px */
+  --space-5: 1.25rem;            /* 20px */
+  --space-6: 1.5rem;             /* 24px */
+  --space-8: 2rem;               /* 32px */
+  --space-10: 2.5rem;            /* 40px */
+  --space-12: 3rem;              /* 48px */
+  --space-16: 4rem;              /* 64px */
+  --space-20: 5rem;              /* 80px */
+  --space-24: 6rem;              /* 96px */
+  --space-32: 8rem;              /* 128px */
+
+  /* === BORDERS & RADIUS === */
+  
+  /* Border Radius */
+  --radius-sm: 0.375rem;         /* 6px - Small elements */
+  --radius-md: 0.5rem;           /* 8px - Standard cards */
+  --radius-lg: 0.75rem;          /* 12px - Large cards */
+  --radius-xl: 1rem;             /* 16px - Hero elements */
+  --radius-2xl: 1.5rem;          /* 24px - Modal, major components */
+  --radius-full: 9999px;         /* Circular elements */
+
+  /* Border Widths */
+  --border-thin: 1px;
+  --border-thick: 2px;
+  --border-heavy: 4px;
+
+  /* === SHADOWS === */
+  
+  /* Elevation System */
+  --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+  --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+  --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+  --shadow-2xl: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+  
+  /* Colored Shadows */
+  --shadow-teal: 0 10px 25px -5px rgba(45, 212, 191, 0.3);
+  --shadow-blue: 0 10px 25px -5px rgba(59, 130, 246, 0.3);
+  --shadow-green: 0 10px 25px -5px rgba(16, 185, 129, 0.3);
+
+  /* === ANIMATION === */
+  
+  /* Timing Functions */
+  --ease-in-out-smooth: cubic-bezier(0.4, 0, 0.2, 1);
+  --ease-out-back: cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  --ease-in-back: cubic-bezier(0.68, -0.55, 0.265, 1.55);
+  --ease-spring: cubic-bezier(0.68, -0.55, 0.265, 1.55);
+  
+  /* Durations */
+  --duration-instant: 0.1s;
+  --duration-fast: 0.15s;
+  --duration-normal: 0.3s;
+  --duration-slow: 0.5s;
+  --duration-slower: 0.75s;
+
+  /* === BREAKPOINTS === */
+  
+  --bp-sm: 640px;               /* Small tablets */
+  --bp-md: 768px;               /* Tablets */
+  --bp-lg: 1024px;              /* Small desktops */
+  --bp-xl: 1280px;              /* Large desktops */
+  --bp-2xl: 1536px;             /* Ultra-wide displays */
+
+  /* === CONTAINER SIZES === */
+  
+  --container-sm: 640px;
+  --container-md: 768px;
+  --container-lg: 1024px;
+  --container-xl: 1200px;       /* Wider than default for better content presentation */
+  --container-2xl: 1400px;
+
+  /* === Z-INDEX SCALE === */
+  
+  --z-base: 0;
+  --z-dropdown: 10;
+  --z-sticky: 20;
+  --z-modal-backdrop: 40;
+  --z-modal: 50;
+  --z-tooltip: 60;
+  --z-notification: 70;
+}
+
+/* === COMPONENT TOKENS === */
+
+/* Button Variables */
+:root {
+  --btn-height-sm: 2rem;         /* 32px */
+  --btn-height-md: 2.5rem;       /* 40px */
+  --btn-height-lg: 3rem;         /* 48px */
+  --btn-height-xl: 3.5rem;       /* 56px */
+  
+  --btn-padding-x-sm: 0.75rem;   /* 12px */
+  --btn-padding-x-md: 1rem;      /* 16px */
+  --btn-padding-x-lg: 1.5rem;    /* 24px */
+  --btn-padding-x-xl: 2rem;      /* 32px */
+}
+
+/* Card Variables */
+:root {
+  --card-padding-sm: 1rem;       /* 16px */
+  --card-padding-md: 1.5rem;     /* 24px */
+  --card-padding-lg: 2rem;       /* 32px */
+  --card-padding-xl: 2.5rem;     /* 40px */
+}
+
+/* Input Variables */
+:root {
+  --input-height-sm: 2rem;       /* 32px */
+  --input-height-md: 2.5rem;     /* 40px */
+  --input-height-lg: 3rem;       /* 48px */
+  
+  --input-padding-x: 0.75rem;    /* 12px */
+  --input-padding-y: 0.5rem;     /* 8px */
+}
+
+/* === ACCESSIBILITY === */
+
+/* Focus ring for accessibility */
+:root {
+  --focus-ring: 0 0 0 3px rgba(45, 212, 191, 0.3);
+  --focus-ring-offset: 2px;
+}
+
+/* Reduced motion support */
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --duration-instant: 0s;
+    --duration-fast: 0s;
+    --duration-normal: 0s;
+    --duration-slow: 0s;
+    --duration-slower: 0s;
+  }
+}
+
+/* High contrast mode support */
+@media (prefers-contrast: high) {
+  :root {
+    --rna-charcoal: #000000;
+    --rna-white: #ffffff;
+  }
+}
+
+/* Dark mode preparation (future enhancement) */
+@media (prefers-color-scheme: dark) {
+  :root {
+    /* Dark mode tokens would go here */
+    /* Currently maintaining light mode only for scientific clarity */
+  }
+}

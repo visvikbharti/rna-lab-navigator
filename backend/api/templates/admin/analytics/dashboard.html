@@ -1,0 +1,458 @@
+{% extends "admin/base_site.html" %}
+{% load static %}
+
+{% block extrastyle %}
+{{ block.super }}
+<style>
+  .dashboard-container {
+    padding: 20px;
+  }
+  .dashboard-row {
+    display: flex;
+    flex-wrap: wrap;
+    margin: 0 -15px;
+  }
+  .dashboard-column {
+    flex: 1;
+    padding: 15px;
+    min-width: 300px;
+  }
+  .dashboard-card {
+    background-color: #fff;
+    border-radius: 4px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.12);
+    margin-bottom: 20px;
+    overflow: hidden;
+  }
+  .dashboard-card-header {
+    background-color: #f5f5f5;
+    padding: 10px 15px;
+    border-bottom: 1px solid #e5e5e5;
+  }
+  .dashboard-card-body {
+    padding: 15px;
+  }
+  .chart-container {
+    position: relative;
+    height: 300px;
+  }
+  .data-label {
+    font-size: 24px;
+    font-weight: bold;
+    text-align: center;
+    margin: 10px 0;
+  }
+  .data-description {
+    text-align: center;
+    color: #666;
+    margin-bottom: 10px;
+  }
+  .metric-tile {
+    text-align: center;
+    padding: 15px;
+    background-color: #f9f9f9;
+    border-radius: 4px;
+    margin-bottom: 15px;
+  }
+  .metric-number {
+    font-size: 28px;
+    font-weight: bold;
+    margin: 5px 0;
+  }
+  .metric-label {
+    color: #666;
+  }
+  .filters {
+    margin-bottom: 20px;
+    padding: 15px;
+    background-color: #f5f5f5;
+    border-radius: 4px;
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="dashboard-container">
+  <h1>RNA Lab Navigator Analytics Dashboard</h1>
+  
+  <div class="filters">
+    <label for="time-range">Time Range:</label>
+    <select id="time-range" onchange="updateDashboard()">
+      <option value="7">Last 7 days</option>
+      <option value="30" selected>Last 30 days</option>
+      <option value="90">Last 3 months</option>
+    </select>
+    <button onclick="updateDashboard()" class="button">Update</button>
+  </div>
+  
+  <!-- Summary metrics -->
+  <div class="dashboard-row">
+    <div class="dashboard-column">
+      <div class="metric-tile">
+        <div class="metric-number" id="total-queries">-</div>
+        <div class="metric-label">Total Queries</div>
+      </div>
+    </div>
+    <div class="dashboard-column">
+      <div class="metric-tile">
+        <div class="metric-number" id="unique-users">-</div>
+        <div class="metric-label">Unique Users</div>
+      </div>
+    </div>
+    <div class="dashboard-column">
+      <div class="metric-tile">
+        <div class="metric-number" id="avg-response-time">-</div>
+        <div class="metric-label">Avg Response Time (ms)</div>
+      </div>
+    </div>
+    <div class="dashboard-column">
+      <div class="metric-tile">
+        <div class="metric-number" id="error-rate">-</div>
+        <div class="metric-label">Error Rate (%)</div>
+      </div>
+    </div>
+  </div>
+  
+  <!-- Usage trends chart -->
+  <div class="dashboard-card">
+    <div class="dashboard-card-header">
+      <h3>Usage Trends</h3>
+    </div>
+    <div class="dashboard-card-body">
+      <div class="chart-container">
+        <canvas id="usage-trend-chart"></canvas>
+      </div>
+    </div>
+  </div>
+  
+  <!-- Charts row -->
+  <div class="dashboard-row">
+    <div class="dashboard-column">
+      <div class="dashboard-card">
+        <div class="dashboard-card-header">
+          <h3>Query Types Distribution</h3>
+        </div>
+        <div class="dashboard-card-body">
+          <div class="chart-container">
+            <canvas id="query-types-chart"></canvas>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="dashboard-column">
+      <div class="dashboard-card">
+        <div class="dashboard-card-header">
+          <h3>Response Time Trend</h3>
+        </div>
+        <div class="dashboard-card-body">
+          <div class="chart-container">
+            <canvas id="response-time-chart"></canvas>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  
+  <!-- Security and performance -->
+  <div class="dashboard-row">
+    <div class="dashboard-column">
+      <div class="dashboard-card">
+        <div class="dashboard-card-header">
+          <h3>Security Events</h3>
+        </div>
+        <div class="dashboard-card-body">
+          <div class="chart-container">
+            <canvas id="security-events-chart"></canvas>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="dashboard-column">
+      <div class="dashboard-card">
+        <div class="dashboard-card-header">
+          <h3>System Performance</h3>
+        </div>
+        <div class="dashboard-card-body">
+          <div class="chart-container">
+            <canvas id="system-performance-chart"></canvas>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Load Chart.js -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js@3.7.1/dist/chart.min.js"></script>
+
+<script>
+  // Chart instances
+  let usageTrendChart;
+  let queryTypesChart;
+  let responseTimeChart;
+  let securityEventsChart;
+  let systemPerformanceChart;
+  
+  // Dashboard initialization
+  document.addEventListener('DOMContentLoaded', function() {
+    updateDashboard();
+  });
+  
+  // Update dashboard with selected time range
+  function updateDashboard() {
+    const days = document.getElementById('time-range').value;
+    fetchMetricsData(days);
+  }
+  
+  // Fetch metrics data from the API
+  function fetchMetricsData(days) {
+    fetch(`{% url 'admin:analytics_metrics_data' %}?days=${days}`)
+      .then(response => response.json())
+      .then(data => {
+        updateSummaryMetrics(data);
+        updateCharts(data);
+      })
+      .catch(error => {
+        console.error('Error fetching metrics data:', error);
+      });
+  }
+  
+  // Update summary metrics
+  function updateSummaryMetrics(data) {
+    // Calculate summary metrics from time series data
+    const totalQueries = data.time_series.queries.reduce((a, b) => a + b, 0);
+    const avgResponseTime = calculateAverage(data.time_series.response_times);
+    const errorCount = data.time_series.errors.reduce((a, b) => a + b, 0);
+    const errorRate = (errorCount / totalQueries * 100).toFixed(2);
+    
+    // Update DOM elements
+    document.getElementById('total-queries').textContent = totalQueries.toLocaleString();
+    document.getElementById('unique-users').textContent = Math.max(...data.time_series.users).toLocaleString();
+    document.getElementById('avg-response-time').textContent = avgResponseTime.toFixed(0);
+    document.getElementById('error-rate').textContent = errorRate;
+  }
+  
+  // Update all charts with new data
+  function updateCharts(data) {
+    updateUsageTrendChart(data.time_series);
+    updateQueryTypesChart(data.query_distribution);
+    updateResponseTimeChart(data.time_series);
+    updateSecurityEventsChart(data.security_summary);
+    // Placeholder for system performance chart
+    updateSystemPerformanceChart(data.time_series);
+  }
+  
+  // Usage trend chart
+  function updateUsageTrendChart(timeSeriesData) {
+    const ctx = document.getElementById('usage-trend-chart').getContext('2d');
+    
+    // Destroy existing chart if it exists
+    if (usageTrendChart) {
+      usageTrendChart.destroy();
+    }
+    
+    usageTrendChart = new Chart(ctx, {
+      type: 'line',
+      data: {
+        labels: timeSeriesData.dates,
+        datasets: [
+          {
+            label: 'Queries',
+            data: timeSeriesData.queries,
+            borderColor: 'rgba(54, 162, 235, 1)',
+            backgroundColor: 'rgba(54, 162, 235, 0.2)',
+            tension: 0.1,
+            fill: true
+          },
+          {
+            label: 'Users',
+            data: timeSeriesData.users,
+            borderColor: 'rgba(75, 192, 192, 1)',
+            backgroundColor: 'rgba(75, 192, 192, 0.2)',
+            tension: 0.1,
+            fill: true
+          }
+        ]
+      },
+      options: {
+        scales: {
+          y: {
+            beginAtZero: true
+          }
+        },
+        responsive: true,
+        maintainAspectRatio: false
+      }
+    });
+  }
+  
+  // Query types distribution chart
+  function updateQueryTypesChart(queryDistribution) {
+    const ctx = document.getElementById('query-types-chart').getContext('2d');
+    
+    // Destroy existing chart if it exists
+    if (queryTypesChart) {
+      queryTypesChart.destroy();
+    }
+    
+    // Generate random colors for each category
+    const backgroundColors = queryDistribution.categories.map(() => 
+      `rgba(${Math.floor(Math.random() * 200)}, ${Math.floor(Math.random() * 200)}, ${Math.floor(Math.random() * 200)}, 0.7)`
+    );
+    
+    queryTypesChart = new Chart(ctx, {
+      type: 'pie',
+      data: {
+        labels: queryDistribution.categories,
+        datasets: [{
+          data: queryDistribution.counts,
+          backgroundColor: backgroundColors,
+          borderColor: 'rgba(255, 255, 255, 0.8)',
+          borderWidth: 1
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: {
+            position: 'right',
+          }
+        }
+      }
+    });
+  }
+  
+  // Response time chart
+  function updateResponseTimeChart(timeSeriesData) {
+    const ctx = document.getElementById('response-time-chart').getContext('2d');
+    
+    // Destroy existing chart if it exists
+    if (responseTimeChart) {
+      responseTimeChart.destroy();
+    }
+    
+    responseTimeChart = new Chart(ctx, {
+      type: 'line',
+      data: {
+        labels: timeSeriesData.dates,
+        datasets: [{
+          label: 'Response Time (ms)',
+          data: timeSeriesData.response_times,
+          borderColor: 'rgba(255, 99, 132, 1)',
+          backgroundColor: 'rgba(255, 99, 132, 0.2)',
+          tension: 0.1,
+          fill: true
+        }]
+      },
+      options: {
+        scales: {
+          y: {
+            beginAtZero: true
+          }
+        },
+        responsive: true,
+        maintainAspectRatio: false
+      }
+    });
+  }
+  
+  // Security events chart
+  function updateSecurityEventsChart(securityData) {
+    const ctx = document.getElementById('security-events-chart').getContext('2d');
+    
+    // Destroy existing chart if it exists
+    if (securityEventsChart) {
+      securityEventsChart.destroy();
+    }
+    
+    // Colors based on severity
+    const backgroundColors = securityData.labels.map(label => {
+      switch(label) {
+        case 'critical': return 'rgba(255, 0, 0, 0.7)';
+        case 'error': return 'rgba(255, 99, 132, 0.7)';
+        case 'warning': return 'rgba(255, 205, 86, 0.7)';
+        case 'info': return 'rgba(54, 162, 235, 0.7)';
+        default: return 'rgba(201, 203, 207, 0.7)';
+      }
+    });
+    
+    securityEventsChart = new Chart(ctx, {
+      type: 'bar',
+      data: {
+        labels: securityData.labels,
+        datasets: [{
+          label: 'Count',
+          data: securityData.counts,
+          backgroundColor: backgroundColors
+        }]
+      },
+      options: {
+        scales: {
+          y: {
+            beginAtZero: true
+          }
+        },
+        responsive: true,
+        maintainAspectRatio: false
+      }
+    });
+  }
+  
+  // System performance chart - placeholder with random data
+  function updateSystemPerformanceChart(timeSeriesData) {
+    const ctx = document.getElementById('system-performance-chart').getContext('2d');
+    
+    // Destroy existing chart if it exists
+    if (systemPerformanceChart) {
+      systemPerformanceChart.destroy();
+    }
+    
+    // Generate mock CPU and memory data based on dates
+    const cpuData = timeSeriesData.dates.map(() => Math.random() * 30 + 10);
+    const memoryData = timeSeriesData.dates.map(() => Math.random() * 40 + 30);
+    
+    systemPerformanceChart = new Chart(ctx, {
+      type: 'line',
+      data: {
+        labels: timeSeriesData.dates,
+        datasets: [
+          {
+            label: 'CPU Usage (%)',
+            data: cpuData,
+            borderColor: 'rgba(255, 159, 64, 1)',
+            backgroundColor: 'rgba(255, 159, 64, 0.2)',
+            tension: 0.1,
+            fill: true
+          },
+          {
+            label: 'Memory Usage (%)',
+            data: memoryData,
+            borderColor: 'rgba(153, 102, 255, 1)',
+            backgroundColor: 'rgba(153, 102, 255, 0.2)',
+            tension: 0.1,
+            fill: true
+          }
+        ]
+      },
+      options: {
+        scales: {
+          y: {
+            beginAtZero: true,
+            max: 100
+          }
+        },
+        responsive: true,
+        maintainAspectRatio: false
+      }
+    });
+  }
+  
+  // Helper function to calculate average
+  function calculateAverage(array) {
+    if (array.length === 0) return 0;
+    const sum = array.reduce((a, b) => a + b, 0);
+    return sum / array.length;
+  }
+</script>
+{% endblock %}
