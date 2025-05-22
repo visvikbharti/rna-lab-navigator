@@ -5,6 +5,7 @@ from rest_framework.routers import DefaultRouter
 from .views_simplified import (
     HealthCheckView, 
     QueryView, 
+    TestRAGView,
     FeedbackViewSet,
     QueryHistoryViewSet,
     QueryCacheView,
@@ -22,6 +23,7 @@ urlpatterns = [
     # Core API endpoints
     path("health/", HealthCheckView.as_view(), name="health-check"),
     path("query/", QueryView.as_view(), name="query"),
+    path("test-rag/", TestRAGView.as_view(), name="test-rag"),  # DEBUG endpoint
     path("cache/", QueryCacheView.as_view(), name="query-cache"),
     
     # Document endpoints

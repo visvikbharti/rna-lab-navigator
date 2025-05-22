@@ -26,6 +26,9 @@ const AdvancedSearchBox = ({ docType }) => {
   const [selectedSavedSearch, setSelectedSavedSearch] = useState(null);
   const [showAdvancedSearch, setShowAdvancedSearch] = useState(false);
   const [previewDocumentId, setPreviewDocumentId] = useState(null);
+  const [expandedCards, setExpandedCards] = useState(new Set());
+  const [conversationHistory, setConversationHistory] = useState([]);
+  const [expandedHistoryItems, setExpandedHistoryItems] = useState(new Set());
   const eventSourceRef = useRef(null);
   const inputRef = useRef(null);
 
@@ -113,15 +116,15 @@ const AdvancedSearchBox = ({ docType }) => {
     setShowSuggestions(false);
     
     try {
-      // Use the proxy URL defined in vite.config.js
-      const searchResponse = await fetch('/api/search/', {
+      // Use the real RAG endpoint with query API
+      const searchResponse = await fetch('/api/query/', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
           query: query,
-          doc_type: docType === 'all' ? '' : docType
+          doc_type: docType === 'all' ? 'all' : docType
         })
       });
       
@@ -143,18 +146,20 @@ const AdvancedSearchBox = ({ docType }) => {
         throw new Error("Failed to parse search results");
       });
       
-      // Transform the response to the expected format
+      // Transform the query API response to the expected format
       const formattedResult = {
-        results: searchData.results.map(result => ({
-          id: result.id,
+        results: searchData.search_results ? searchData.search_results.map((result, index) => ({
+          id: result.id || index,
           title: result.title,
-          doc_type: result.type,
+          doc_type: result.type || result.doc_type,
           author: result.author,
           year: result.year,
-          content: result.snippet,
-          score: result.score
-        })),
+          content: result.snippet || 'Content available in detailed view',
+          score: result.score || 0.9
+        })) : [],
         query: query,
+        answer: searchData.answer,
+        confidence: searchData.confidence_score,
         metadata: {
           analytics_id: `query-${new Date().getTime()}`,
           search_time_ms: searchData.processing_time * 1000,
@@ -181,6 +186,19 @@ const AdvancedSearchBox = ({ docType }) => {
       };
       
       setResponse(formattedResult);
+      
+      // Add to conversation history
+      const conversationEntry = {
+        id: Date.now(),
+        query: query,
+        response: formattedResult,
+        timestamp: new Date().toLocaleTimeString()
+      };
+      setConversationHistory(prev => [...prev, conversationEntry]);
+      
+      // Clear query input for next question (ChatGPT-style UX)
+      setQuery('');
+      
       setIsLoading(false);
     } catch (error) {
       console.error('Error with search:', error);
@@ -266,7 +284,7 @@ const AdvancedSearchBox = ({ docType }) => {
     
     // Add a subtle indicator that these are demo results
     setTimeout(() => {
-      setError('Note: Showing demo results due to API limitations. In production, actual search results would appear here.');
+      setError('Note: Showing demo results due to API connection issues. The real RAG system is available via the main search.');
     }, 500);
   };
 
@@ -296,6 +314,26 @@ const AdvancedSearchBox = ({ docType }) => {
   
   const handleClosePreview = () => {
     setPreviewDocumentId(null);
+  };
+
+  const toggleCardExpansion = (cardIndex) => {
+    const newExpanded = new Set(expandedCards);
+    if (newExpanded.has(cardIndex)) {
+      newExpanded.delete(cardIndex);
+    } else {
+      newExpanded.add(cardIndex);
+    }
+    setExpandedCards(newExpanded);
+  };
+
+  const toggleHistoryExpansion = (itemId) => {
+    const newExpanded = new Set(expandedHistoryItems);
+    if (newExpanded.has(itemId)) {
+      newExpanded.delete(itemId);
+    } else {
+      newExpanded.add(itemId);
+    }
+    setExpandedHistoryItems(newExpanded);
   };
 
   // Determine what to display
@@ -421,14 +459,69 @@ const AdvancedSearchBox = ({ docType }) => {
         </div>
       )}
 
-      {/* Search Results */}
+      {/* Conversation History */}
+      {conversationHistory.length > 1 && (
+        <div className="mb-6">
+          <h2 className="text-lg font-medium text-gray-900 mb-4">Conversation History</h2>
+          <div className="space-y-4 max-h-80 overflow-y-auto">
+            {conversationHistory.slice(0, -1).reverse().map((entry) => (
+              <div key={entry.id} className="bg-gray-50 rounded-lg p-4 border">
+                <div className="text-sm text-gray-600 mb-2">{entry.timestamp}</div>
+                <div className="font-medium text-gray-900 mb-2">Q: {entry.query}</div>
+                {entry.response.answer && (
+                  <div className={`text-sm text-gray-700 ${
+                    expandedHistoryItems.has(entry.id) ? '' : 'line-clamp-2'
+                  }`}>
+                    A: {entry.response.answer}
+                  </div>
+                )}
+                {entry.response.answer && entry.response.answer.length > 200 && (
+                  <button
+                    className="text-xs text-blue-600 hover:text-blue-800 mt-1"
+                    onClick={() => toggleHistoryExpansion(entry.id)}
+                  >
+                    {expandedHistoryItems.has(entry.id) ? 'Show less' : 'Show more'}
+                  </button>
+                )}
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Current Search Results */}
       {showSearchResults && (
         <div>
+          {/* AI Answer - Primary Display */}
+          {response.answer && (
+            <div className="mb-6 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-6">
+              <div className="flex items-start gap-3">
+                <div className="flex-shrink-0 w-8 h-8 bg-blue-500 dark:bg-blue-600 rounded-full flex items-center justify-center">
+                  <svg className="w-4 h-4 text-white" fill="currentColor" viewBox="0 0 20 20">
+                    <path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                  </svg>
+                </div>
+                <div className="flex-grow">
+                  <h3 className="font-medium text-blue-900 dark:text-blue-100 mb-2">AI Assistant Response:</h3>
+                  <div className="text-gray-800 dark:text-gray-200 leading-relaxed whitespace-pre-wrap">
+                    {response.answer}
+                  </div>
+                  {response.confidence && (
+                    <div className="mt-3 text-sm text-blue-700 dark:text-blue-300">
+                      Confidence: {(response.confidence * 100).toFixed(0)}%
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+          )}
+          
+          {/* Source Documents - Secondary Display */}
           <div className="mb-4 flex justify-between items-center">
             <h2 className="text-lg font-medium text-gray-900">
-              Search Results 
+              Supporting Sources
               <span className="text-gray-500 text-sm ml-2">
-                ({response.results.length} {response.results.length === 1 ? 'match' : 'matches'})
+                ({response.results.length} {response.results.length === 1 ? 'document' : 'documents'})
               </span>
             </h2>
             
@@ -488,9 +581,24 @@ const AdvancedSearchBox = ({ docType }) => {
                   </div>
                 )}
                 
-                <div className="text-sm text-gray-700 line-clamp-3 mb-2">
+                <div className={`text-sm text-gray-700 mb-2 ${
+                  expandedCards.has(index) ? '' : 'line-clamp-3'
+                }`}>
                   {result.content || result.caption || ''}
                 </div>
+                
+                {/* Show expand/collapse button if content is long */}
+                {(result.content || result.caption || '').length > 200 && (
+                  <button
+                    className="text-xs text-primary-600 hover:text-primary-800 mb-2"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      toggleCardExpansion(index);
+                    }}
+                  >
+                    {expandedCards.has(index) ? 'Show less' : 'Show more'}
+                  </button>
+                )}
                 
                 <div className="flex justify-between items-center">
                   <div className="text-xs text-gray-500">

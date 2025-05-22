@@ -17,7 +17,7 @@ import json
 import time
 import random
 
-from .models import QueryHistory, Feedback, QueryCache, Figure
+from .models import QueryHistory, Feedback, QueryCache, Figure, Document
 from .serializers import (
     QuerySerializer, 
     QueryHistorySerializer, 
@@ -115,6 +115,9 @@ class QueryView(APIView):
         
         query_text = serializer.validated_data['query']
         doc_type = serializer.validated_data.get('doc_type', None)
+        # Normalize doc_type - treat empty string as 'all'
+        if not doc_type or doc_type == '':
+            doc_type = 'all'
         use_cache = serializer.validated_data.get('use_cache', True)
         
         # Check cache if enabled
@@ -188,12 +191,14 @@ class QueryView(APIView):
             rag_result = perform_rag_query(query_text, doc_type)
             answer = rag_result['answer']
             sources = rag_result['sources']
+            search_results = rag_result['search_results']  # Include search results with snippets
             confidence_score = rag_result['confidence_score']
         except Exception as e:
             print(f"RAG pipeline error: {e}")
             # Mock LLM response as fallback
             answer = f"I apologize, but I'm having trouble accessing the document database. Please try again later."
             sources = self.extract_sources(reranked_results)
+            search_results = []  # Empty search results for fallback
             confidence_score = 0.1
         
         # Sources and confidence already set by RAG pipeline or fallback
@@ -208,7 +213,7 @@ class QueryView(APIView):
             sources=json.dumps(sources),
             confidence_score=confidence_score,
             processing_time=processing_time,
-            doc_type=doc_type
+            doc_type=doc_type or 'all'
         )
         
         # Store in cache if good confidence
@@ -220,7 +225,7 @@ class QueryView(APIView):
                 answer=answer,
                 sources=json.dumps(sources),
                 confidence_score=confidence_score,
-                doc_type=doc_type
+                doc_type=doc_type or 'all'
             )
         
         # Return response
@@ -228,10 +233,46 @@ class QueryView(APIView):
             'query': query_text,
             'answer': answer,
             'sources': sources,
+            'search_results': search_results,  # Include search results with snippets
             'confidence_score': confidence_score,
             'from_cache': False,
             'processing_time': processing_time
         })
+
+class TestRAGView(APIView):
+    """Debug endpoint to test RAG functionality."""
+    permission_classes = [AllowAny]
+    
+    def get(self, request):
+        from api.search.real_rag import vector_store, perform_rag_query
+        
+        try:
+            vector_count = len(vector_store.vectors)
+            if vector_count == 0:
+                return Response({
+                    "status": "error",
+                    "message": "Vector store is empty",
+                    "vector_count": vector_count
+                })
+            
+            # Test RAG query
+            result = perform_rag_query("what is this thesis about", "all")
+            
+            return Response({
+                "status": "success",
+                "vector_count": vector_count,
+                "test_query": "what is this thesis about",
+                "answer_preview": result['answer'][:100] + "...",
+                "confidence": result['confidence_score'],
+                "sources": len(result['sources'])
+            })
+        except Exception as e:
+            import traceback
+            return Response({
+                "status": "error",
+                "message": str(e),
+                "traceback": traceback.format_exc()
+            })
 
 class QueryHistoryViewSet(ReadOnlyModelViewSet):
     """ViewSet for query history."""
@@ -330,13 +371,37 @@ class DocumentPreviewView(APIView):
     
     def get(self, request, document_id):
         """Get a preview of a document."""
-        # In a real implementation, this would retrieve content from the document
-        # For demo, return dummy content
-        
-        return Response({
-            'document_id': document_id,
-            'title': f"Sample Document {document_id}",
-            'preview': "This is a sample document preview text. It would normally contain actual content from the document.",
-            'pages': 5,
-            'has_figures': True
-        })
+        try:
+            # Get the actual document from database
+            document = Document.objects.get(id=document_id)
+            
+            # Get content from vector store
+            from api.search.real_rag import vector_store
+            content_chunks = []
+            for metadata in vector_store.metadata:
+                if metadata['document_id'] == int(document_id):
+                    content_chunks.append(metadata['text'])
+            
+            # Combine chunks for preview (limit to first 1000 chars)
+            combined_content = ' '.join(content_chunks)
+            preview_text = combined_content[:1000] + "..." if len(combined_content) > 1000 else combined_content
+            
+            return Response({
+                'document_id': document_id,
+                'title': document.title,
+                'author': document.author,
+                'year': document.year,
+                'doc_type': document.doc_type,
+                'preview': preview_text or "No content available for preview.",
+                'created_at': document.created_at.isoformat(),
+                'total_chunks': len(content_chunks)
+            })
+            
+        except Document.DoesNotExist:
+            return Response({
+                'error': 'Document not found'
+            }, status=status.HTTP_404_NOT_FOUND)
+        except Exception as e:
+            return Response({
+                'error': f'Error loading document: {str(e)}'
+            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)

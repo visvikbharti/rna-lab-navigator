@@ -56,13 +56,24 @@ class SimpleVectorStore:
         
         results = []
         for idx in top_indices:
-            if similarities[idx] > 0.7:  # Threshold for relevance
+            if similarities[idx] > 0.5:  # Lowered threshold for better recall
+                score = float(similarities[idx])
+                
+                # Boost score for exact keyword matches
+                text_lower = self.metadata[idx]['text'].lower()
+                query_lower = query.lower()
+                for word in query_lower.split():
+                    if len(word) > 3 and word in text_lower:  # Boost for significant words
+                        score += 0.3  # Increased boost for keyword matches
+                
                 results.append({
                     'text': self.metadata[idx]['text'],
                     'metadata': self.metadata[idx],
-                    'score': float(similarities[idx])
+                    'score': min(score, 1.0)  # Cap at 1.0
                 })
         
+        # Re-sort by boosted scores
+        results.sort(key=lambda x: x['score'], reverse=True)
         return results
     
     def get_embedding(self, text):
@@ -182,31 +193,68 @@ def ingest_document_to_vectorstore(document):
 
 
 def search_documents(query, doc_type="all", top_k=5):
-    """Search documents using vector similarity."""
-    # Get relevant chunks
-    search_results = vector_store.search(query, top_k=top_k * 2)  # Get more for filtering
+    """Search documents using vector similarity with smart deduplication."""
+    # Get more results for better filtering and deduplication
+    search_results = vector_store.search(query, top_k=top_k * 3)  
     
     # Filter by document type if specified
     if doc_type != "all":
         search_results = [r for r in search_results if r['metadata']['doc_type'] == doc_type]
     
-    # Limit to top_k
-    search_results = search_results[:top_k]
-    
-    # Format results for API response
-    formatted_results = []
+    # Smart deduplication: group by document and select best chunks
+    document_groups = {}
     for result in search_results:
+        doc_key = f"{result['metadata']['title']}_{result['metadata']['author']}"
+        if doc_key not in document_groups:
+            document_groups[doc_key] = []
+        document_groups[doc_key].append(result)
+    
+    # Select the best chunk(s) from each document
+    formatted_results = []
+    for doc_key, chunks in document_groups.items():
+        # Sort chunks by score (best first)
+        chunks.sort(key=lambda x: x['score'], reverse=True)
+        
+        # For the same document, combine information from top chunks
+        best_chunk = chunks[0]
+        
+        # Create a longer, more informative snippet by combining multiple chunks
+        combined_text = best_chunk['text']
+        if len(chunks) > 1:
+            # Add content from other high-scoring chunks if they're different enough
+            for chunk in chunks[1:3]:  # Use up to 3 chunks max
+                if chunk['text'][:50] not in combined_text:  # Avoid exact duplicates
+                    combined_text += " ... " + chunk['text']
+        
         formatted_results.append({
-            'id': str(result['metadata']['document_id']),
-            'title': result['metadata']['title'],
-            'type': result['metadata']['doc_type'],
-            'author': result['metadata']['author'],
-            'year': result['metadata']['year'],
-            'snippet': result['text'][:200] + "..." if len(result['text']) > 200 else result['text'],
-            'score': round(result['score'], 2)
+            'id': str(best_chunk['metadata']['document_id']),
+            'title': best_chunk['metadata']['title'],
+            'type': best_chunk['metadata']['doc_type'],
+            'author': best_chunk['metadata']['author'],
+            'year': best_chunk['metadata']['year'],
+            'snippet': combined_text[:1200] + "..." if len(combined_text) > 1200 else combined_text,
+            'score': round(best_chunk['score'], 2),
+            'chunk_count': len(chunks)  # Show how many chunks matched
         })
     
-    return formatted_results
+    # Sort by score and filter out low-relevance results
+    formatted_results.sort(key=lambda x: x['score'], reverse=True)
+    
+    # Filter supporting sources: only include documents with reasonable relevance
+    if len(formatted_results) > 1:
+        # If we have multiple results, filter out those with significantly lower scores
+        highest_score = formatted_results[0]['score']
+        filtered_results = []
+        
+        for result in formatted_results:
+            # Include result if it's within 0.3 points of the highest score
+            # This prevents irrelevant documents from appearing as "supporting sources"
+            if result['score'] >= highest_score - 0.3 or result['score'] >= 0.7:
+                filtered_results.append(result)
+        
+        return filtered_results[:top_k]
+    
+    return formatted_results[:top_k]
 
 
 def generate_answer_with_llm(query, search_results):
@@ -219,20 +267,43 @@ def generate_answer_with_llm(query, search_results):
         }
     
     # Prepare context from search results
-    context = "\n\n".join([
-        f"Source {i+1} ({result['title']} by {result['author']}, {result['year']}):\n{result['snippet']}"
-        for i, result in enumerate(search_results[:3])
-    ])
+    context_parts = []
+    for i, result in enumerate(search_results[:3]):
+        # Handle both old vector search format and new search_documents format
+        if 'snippet' in result:
+            # New format from search_documents
+            content = result['snippet']
+            title = result['title']
+            author = result['author'] 
+            year = result['year']
+        else:
+            # Old format from vector_store.search
+            content = result['text']
+            title = result['metadata']['title']
+            author = result['metadata']['author']
+            year = result['metadata']['year']
+        
+        context_parts.append(f"Source {i+1} ({title} by {author}, {year}):\n{content}")
     
-    # Prepare prompt following golden rule #2
-    prompt = f"""Answer only from the provided sources; if unsure, say 'I don't know.'
+    context = "\n\n".join(context_parts)
+    
+    # Prepare prompt for conversational RAG assistant
+    prompt = f"""You are a helpful research assistant for Dr. Debojyoti Chakraborty's RNA biology lab. Based on the lab documents provided, answer the user's question in a helpful, conversational manner.
 
 Context from lab documents:
 {context}
 
 Question: {query}
 
-Please provide a clear, scientific answer based only on the information in the sources above. Include citations to the specific sources you reference."""
+Instructions:
+- First check if the lab documents contain relevant information about the question
+- If lab documents contain relevant info: Synthesize and cite the sources (e.g., "According to [Author, Year]...")
+- If lab documents don't contain specific information: Provide general scientific knowledge with clear disclaimers like "While this isn't covered in your lab documents, from a general research perspective..." 
+- Always be helpful and educational - don't just say "I don't know"
+- Distinguish clearly between lab-specific findings vs. general scientific knowledge
+- Include citations to specific lab sources when available
+- For questions outside lab scope, offer general insights and suggest where they might find more specific information
+- Be conversational and engaging, like a knowledgeable lab colleague"""
     
     try:
         response = openai.chat.completions.create(
@@ -248,18 +319,44 @@ Please provide a clear, scientific answer based only on the information in the s
         answer = response.choices[0].message.content
         
         # Calculate confidence based on search results relevance
-        confidence_score = min(search_results[0]['score'] if search_results else 0.0, 0.95)
+        base_confidence = min(search_results[0]['score'] if search_results else 0.0, 0.95)
         
-        # Extract sources
-        sources = [
-            {
-                'title': result['title'],
-                'author': result['author'],
-                'year': result['year'],
-                'type': result['type']
-            }
-            for result in search_results[:3]
-        ]
+        # Reduce confidence if the answer is too generic or "I don't know"
+        if answer.strip().lower() in ["i don't know.", "i don't know", "i don't have enough information"]:
+            confidence_score = 0.1
+        else:
+            confidence_score = base_confidence
+        
+        # Extract unique sources only
+        unique_sources = {}
+        for result in search_results[:5]:
+            # Handle both old and new format
+            if 'snippet' in result:
+                # New format from search_documents
+                key = f"{result['title']}_{result['author']}_{result['year']}"
+                if key not in unique_sources:
+                    unique_sources[key] = {
+                        'title': result['title'],
+                        'author': result['author'], 
+                        'year': result['year'],
+                        'type': result['type']
+                    }
+            else:
+                # Old format from vector_store.search
+                title = result['metadata']['title']
+                author = result['metadata']['author']
+                year = result['metadata']['year']
+                doc_type = result['metadata']['doc_type']
+                key = f"{title}_{author}_{year}"
+                if key not in unique_sources:
+                    unique_sources[key] = {
+                        'title': title,
+                        'author': author,
+                        'year': year,
+                        'type': doc_type
+                    }
+        
+        sources = list(unique_sources.values())[:3]  # Limit to 3 max
         
         return {
             'answer': answer,

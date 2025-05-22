@@ -11,18 +11,28 @@ import SearchQualityDashboard from './components/SearchQualityDashboard';
 import SecurityAuditDashboard from './components/SecurityAuditDashboard';
 import EnhancedComponentsDemo from './components/enhanced/Demo';
 import { AnimationProvider } from './contexts/AnimationContext';
+import { DarkModeProvider } from './contexts/DarkModeContext';
+import DarkModeToggle from './components/DarkModeToggle';
 import './App.css';
 
 function MainApp() {
   const [docType, setDocType] = useState('all');
 
   return (
-    <div className="container mx-auto px-4 py-8 max-w-4xl">
+    <div className="container mx-auto px-4 py-8 max-w-4xl dark:bg-gray-900 min-h-screen transition-colors">
       <header className="mb-8 text-center">
-        <h1 className="text-3xl font-bold text-gray-800 mb-2">RNA Lab Navigator</h1>
-        <p className="text-gray-600">
-          Your AI assistant for lab protocols, papers, and theses
-        </p>
+        <div className="flex justify-between items-center mb-4">
+          <div className="flex-1"></div>
+          <div className="flex-1">
+            <h1 className="text-3xl font-bold text-gray-800 dark:text-gray-100 mb-2">RNA Lab Navigator</h1>
+            <p className="text-gray-600 dark:text-gray-400">
+              Your AI assistant for lab protocols, papers, and theses
+            </p>
+          </div>
+          <div className="flex-1 flex justify-end">
+            <DarkModeToggle />
+          </div>
+        </div>
         
         <nav className="mt-4">
           <ul className="flex justify-center space-x-6">
@@ -273,9 +283,10 @@ function SecurityAuditPage() {
 
 function App() {
   return (
-    <AnimationProvider>
-      <Router>
-        <div className="min-h-screen bg-rna-platinum">
+    <DarkModeProvider>
+      <AnimationProvider>
+        <Router>
+          <div className="min-h-screen bg-rna-platinum dark:bg-gray-900">
           <Routes>
             <Route path="/" element={<MainApp />} />
             <Route path="/upload" element={<UploadPage />} />
@@ -311,9 +322,10 @@ function App() {
               },
             }}
           />
-        </div>
-      </Router>
-    </AnimationProvider>
+          </div>
+        </Router>
+      </AnimationProvider>
+    </DarkModeProvider>
   );
 }
 

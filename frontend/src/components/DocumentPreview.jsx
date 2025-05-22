@@ -144,10 +144,12 @@ const DocumentPreview = ({ documentId, onClose }) => {
             </span>
           </div>
           
-          <div className="mt-3">
-            <div className="text-xs text-gray-500">Citation:</div>
-            <div className="text-sm text-gray-700">{document.citation}</div>
-          </div>
+          {document.total_chunks && (
+            <div className="mt-3">
+              <div className="text-xs text-gray-500">Content Info:</div>
+              <div className="text-sm text-gray-700">{document.total_chunks} chunks indexed</div>
+            </div>
+          )}
         </div>
         
         {/* Document content preview */}
@@ -155,7 +157,7 @@ const DocumentPreview = ({ documentId, onClose }) => {
           <div className="bg-gray-50 rounded-lg p-4 mb-4">
             <h4 className="text-sm font-medium text-gray-700 mb-2">Content Preview</h4>
             <div className="whitespace-pre-line text-gray-800 text-sm font-mono">
-              {document.preview_text || 'No content available for preview.'}
+              {document.preview || 'No content available for preview.'}
             </div>
           </div>
           
