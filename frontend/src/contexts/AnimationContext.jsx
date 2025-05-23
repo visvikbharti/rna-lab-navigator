@@ -182,6 +182,16 @@ const AnimationContext = createContext({
   setReducedMotion: () => {},
   isAnimating: false,
   setIsAnimating: () => {},
+  animationsEnabled: true,
+  setAnimationsEnabled: () => {},
+  animationSpeed: 1,
+  setAnimationSpeed: () => {},
+  particlesEnabled: true,
+  setParticlesEnabled: () => {},
+  particleCount: 50,
+  setParticleCount: () => {},
+  transitionsEnabled: true,
+  setTransitionsEnabled: () => {},
 });
 
 /**
@@ -191,37 +201,138 @@ const AnimationContext = createContext({
 export const AnimationProvider = ({ children }) => {
   const [reducedMotion, setReducedMotion] = useState(false);
   const [isAnimating, setIsAnimating] = useState(false);
+  const [animationsEnabled, setAnimationsEnabled] = useState(true);
+  const [animationSpeed, setAnimationSpeed] = useState(1); // 0.5 = slow, 1 = normal, 2 = fast
+  const [particlesEnabled, setParticlesEnabled] = useState(true);
+  const [particleCount, setParticleCount] = useState(50);
+  const [transitionsEnabled, setTransitionsEnabled] = useState(true);
 
   // Check for user's motion preferences
   useEffect(() => {
     const mediaQuery = window.matchMedia('(prefers-reduced-motion: reduce)');
-    setReducedMotion(mediaQuery.matches);
+    const prefersReduced = mediaQuery.matches;
+    setReducedMotion(prefersReduced);
+    
+    // Auto-disable animations if user prefers reduced motion
+    if (prefersReduced) {
+      setAnimationsEnabled(false);
+      setParticlesEnabled(false);
+      setTransitionsEnabled(false);
+    }
 
     const handleChange = (e) => {
       setReducedMotion(e.matches);
+      if (e.matches) {
+        setAnimationsEnabled(false);
+        setParticlesEnabled(false);
+        setTransitionsEnabled(false);
+      }
     };
 
     mediaQuery.addEventListener('change', handleChange);
     return () => mediaQuery.removeEventListener('change', handleChange);
   }, []);
 
-  // Enhanced config that respects reduced motion preferences
+  // Load saved preferences from localStorage
+  useEffect(() => {
+    const savedSettings = localStorage.getItem('animationSettings');
+    if (savedSettings && !reducedMotion) {
+      try {
+        const settings = JSON.parse(savedSettings);
+        setAnimationsEnabled(settings.animationsEnabled ?? true);
+        setAnimationSpeed(settings.animationSpeed ?? 1);
+        setParticlesEnabled(settings.particlesEnabled ?? true);
+        setParticleCount(settings.particleCount ?? 50);
+        setTransitionsEnabled(settings.transitionsEnabled ?? true);
+      } catch (error) {
+        console.error('Error loading animation settings:', error);
+      }
+    }
+  }, [reducedMotion]);
+
+  // Save preferences to localStorage
+  useEffect(() => {
+    if (!reducedMotion) {
+      localStorage.setItem('animationSettings', JSON.stringify({
+        animationsEnabled,
+        animationSpeed,
+        particlesEnabled,
+        particleCount,
+        transitionsEnabled
+      }));
+    }
+  }, [animationsEnabled, animationSpeed, particlesEnabled, particleCount, transitionsEnabled, reducedMotion]);
+
+  // Animation timing utilities
+  const getTransitionDuration = (baseDuration = 300) => {
+    if (!transitionsEnabled || reducedMotion) return 0;
+    return baseDuration / animationSpeed;
+  };
+
+  const getAnimationDuration = (baseDuration = 1000) => {
+    if (!animationsEnabled || reducedMotion) return 0;
+    return baseDuration / animationSpeed;
+  };
+
+  const getDelayDuration = (baseDelay = 0) => {
+    if (!animationsEnabled || reducedMotion) return 0;
+    return baseDelay / animationSpeed;
+  };
+
+  // Particle system configuration
+  const particleConfig = {
+    enabled: particlesEnabled && animationsEnabled && !reducedMotion,
+    count: particleCount,
+    speed: animationSpeed,
+    size: {
+      min: 1,
+      max: 3
+    },
+    opacity: {
+      min: 0.1,
+      max: 0.4
+    },
+    color: '#60A5FA', // blue-400
+    // Additional particle settings
+    distance: 150,
+    move: {
+      speed: 0.5 * animationSpeed,
+      direction: 'none',
+      random: true,
+      straight: false,
+      outModes: {
+        default: 'bounce'
+      }
+    }
+  };
+
+  // Enhanced config that respects all animation preferences
   const enhancedConfig = {
     ...ANIMATION_CONFIG,
-    // Override durations for reduced motion
-    durations: reducedMotion 
+    // Override durations based on settings
+    durations: (reducedMotion || !animationsEnabled)
       ? { fast: 0, normal: 0, slow: 0, slower: 0 }
-      : ANIMATION_CONFIG.durations,
+      : Object.fromEntries(
+          Object.entries(ANIMATION_CONFIG.durations).map(([key, value]) => [
+            key,
+            value / animationSpeed
+          ])
+        ),
     
-    // Override transitions for reduced motion
-    transitions: reducedMotion
+    // Override transitions based on settings
+    transitions: (reducedMotion || !transitionsEnabled)
       ? Object.fromEntries(
           Object.entries(ANIMATION_CONFIG.transitions).map(([key, value]) => [
             key,
             { ...value, duration: 0 }
           ])
         )
-      : ANIMATION_CONFIG.transitions,
+      : Object.fromEntries(
+          Object.entries(ANIMATION_CONFIG.transitions).map(([key, value]) => [
+            key,
+            value.duration ? { ...value, duration: value.duration / animationSpeed } : value
+          ])
+        ),
   };
 
   const value = {
@@ -230,6 +341,21 @@ export const AnimationProvider = ({ children }) => {
     setReducedMotion,
     isAnimating,
     setIsAnimating,
+    animationsEnabled,
+    setAnimationsEnabled,
+    animationSpeed,
+    setAnimationSpeed,
+    particlesEnabled,
+    setParticlesEnabled,
+    particleCount,
+    setParticleCount,
+    transitionsEnabled,
+    setTransitionsEnabled,
+    // Utilities
+    getTransitionDuration,
+    getAnimationDuration,
+    getDelayDuration,
+    particleConfig,
   };
 
   return (
@@ -254,10 +380,10 @@ export const useAnimation = () => {
  * Hook to get animation variants with reduced motion support
  */
 export const useAnimationVariants = (variantName) => {
-  const { config, reducedMotion } = useAnimation();
+  const { config, reducedMotion, animationsEnabled } = useAnimation();
   
-  if (reducedMotion) {
-    // Return static variants for reduced motion
+  if (reducedMotion || !animationsEnabled) {
+    // Return static variants for reduced motion or disabled animations
     return {
       hidden: {},
       visible: {},
@@ -271,13 +397,59 @@ export const useAnimationVariants = (variantName) => {
  * Hook to get transition config with reduced motion support
  */
 export const useAnimationTransition = (transitionName = 'normal') => {
-  const { config, reducedMotion } = useAnimation();
+  const { config, reducedMotion, transitionsEnabled } = useAnimation();
   
-  if (reducedMotion) {
+  if (reducedMotion || !transitionsEnabled) {
     return { duration: 0 };
   }
   
   return config.transitions[transitionName] || config.transitions.normal;
+};
+
+/**
+ * Hook for CSS transition classes
+ */
+export const useTransitionClasses = () => {
+  const { transitionsEnabled, animationSpeed, reducedMotion } = useAnimation();
+  
+  if (!transitionsEnabled || reducedMotion) {
+    return {
+      base: '',
+      fast: '',
+      normal: '',
+      slow: '',
+    };
+  }
+  
+  const getDuration = (ms) => Math.round(ms / animationSpeed);
+  
+  return {
+    base: 'transition-all',
+    fast: `transition-all duration-${getDuration(150)}`,
+    normal: `transition-all duration-${getDuration(300)}`,
+    slow: `transition-all duration-${getDuration(500)}`,
+  };
+};
+
+/**
+ * Hook for staggered animations
+ */
+export const useStaggerAnimation = (delayPerChild = 0.1) => {
+  const { animationsEnabled, animationSpeed, reducedMotion } = useAnimation();
+  
+  if (!animationsEnabled || reducedMotion) {
+    return {
+      animate: {}
+    };
+  }
+  
+  return {
+    animate: {
+      transition: {
+        staggerChildren: delayPerChild / animationSpeed
+      }
+    }
+  };
 };
 
 /**

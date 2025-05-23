@@ -46,6 +46,9 @@ urlpatterns = [
     # Enhanced search endpoints (simplified for demo)
     path("search/", include("api.search.urls_simplified")),
     
+    # Hypothesis mode endpoints
+    path("hypothesis/", include("api.hypothesis.urls")),
+    
     # Router URLs
     path("", include(router.urls)),
 ]

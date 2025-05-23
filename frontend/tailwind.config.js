@@ -9,6 +9,17 @@ export default {
     extend: {
       // Custom color palette inspired by RNA structure and colossal.com
       colors: {
+        // Colossal-inspired colors
+        'deep-space': '#0A0E27',
+        'cosmic-blue': '#1E3A8A',
+        'electric-blue': '#3B82F6',
+        'plasma-cyan': '#06B6D4',
+        'cosmic-purple': '#6B46C1',
+        'neon-pink': '#EC4899',
+        'earth-brown': '#3B3A2F',
+        'sage-green': '#6B7753',
+        'bio-emerald': '#22C55E',
+        
         rna: {
           // Primary RNA-inspired colors
           'deep-teal': '#0d4650',

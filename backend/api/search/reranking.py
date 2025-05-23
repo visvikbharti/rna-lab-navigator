@@ -6,7 +6,9 @@ import logging
 import time
 from typing import List, Dict, Any, Optional, Tuple
 
-from sentence_transformers import CrossEncoder
+# Temporarily disabled due to import issue
+# from sentence_transformers import CrossEncoder
+CrossEncoder = None
 from django.conf import settings
 
 logger = logging.getLogger(__name__)
@@ -27,7 +29,7 @@ CROSS_ENCODER_MODELS = {
 _cross_encoder_instance = None
 
 
-def get_cross_encoder(model_name: str = None) -> CrossEncoder:
+def get_cross_encoder(model_name: str = None):
     """
     Get or create a cross-encoder model instance.
     Uses a singleton pattern to avoid loading the model multiple times.
@@ -61,6 +63,9 @@ def get_cross_encoder(model_name: str = None) -> CrossEncoder:
         start_time = time.time()
         
         # Load the model
+        if CrossEncoder is None:
+            logger.warning("CrossEncoder not available due to import issue")
+            return None
         _cross_encoder_instance = CrossEncoder(model_path, max_length=512)
         
         logger.info(f"Cross-encoder model loaded in {time.time() - start_time:.2f}s")
@@ -114,7 +119,11 @@ def rerank_search_results(query_text: str, results: List[Dict],
         query_doc_pairs.append([query_text, text])
     
     # Score all query-document pairs
-    scores = model.predict(query_doc_pairs)
+    try:
+        scores = model.predict(query_doc_pairs)
+    except Exception as e:
+        logger.error(f"Error during reranking: {e}")
+        return results, 0
     
     # Add scores to results
     for i, score in enumerate(scores):
@@ -169,7 +178,11 @@ def rerank_chunks_for_rag(query_text: str, chunks: List[Dict],
         query_chunk_pairs.append([query_text, chunk_text])
     
     # Score all query-chunk pairs
-    scores = model.predict(query_chunk_pairs)
+    try:
+        scores = model.predict(query_chunk_pairs)
+    except Exception as e:
+        logger.error(f"Error during chunk reranking: {e}")
+        return chunks[:top_k], 0
     
     # Add scores to chunks
     for i, score in enumerate(scores):

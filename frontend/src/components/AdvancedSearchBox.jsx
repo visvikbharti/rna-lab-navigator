@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { v4 as uuidv4 } from 'uuid';
+import { motion, AnimatePresence } from 'framer-motion';
 import AnswerCard from './AnswerCard';
 import EnhancedFeedbackForm from './EnhancedFeedbackForm';
 import QuerySuggestions from './QuerySuggestions';
@@ -493,8 +494,14 @@ const AdvancedSearchBox = ({ docType }) => {
       {showSearchResults && (
         <div>
           {/* AI Answer - Primary Display */}
-          {response.answer && (
-            <div className="mb-6 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-6">
+          <AnimatePresence>
+            {response.answer && (
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -20 }}
+                transition={{ duration: 0.4 }}
+                className="mb-6 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-6 backdrop-blur-sm">
               <div className="flex items-start gap-3">
                 <div className="flex-shrink-0 w-8 h-8 bg-blue-500 dark:bg-blue-600 rounded-full flex items-center justify-center">
                   <svg className="w-4 h-4 text-white" fill="currentColor" viewBox="0 0 20 20">
@@ -513,8 +520,9 @@ const AdvancedSearchBox = ({ docType }) => {
                   )}
                 </div>
               </div>
-            </div>
+            </motion.div>
           )}
+          </AnimatePresence>
           
           {/* Source Documents - Secondary Display */}
           <div className="mb-4 flex justify-between items-center">
@@ -561,9 +569,13 @@ const AdvancedSearchBox = ({ docType }) => {
           {/* Result list */}
           <div className="space-y-4">
             {response.results.map((result, index) => (
-              <div 
+              <motion.div 
                 key={result.id || index}
-                className="bg-white rounded-lg shadow p-4 hover:shadow-md transition-shadow cursor-pointer"
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.3, delay: index * 0.1 }}
+                whileHover={{ scale: 1.02, boxShadow: "0 10px 20px rgba(0,0,0,0.1)" }}
+                className="bg-white dark:bg-gray-800/80 backdrop-blur-sm rounded-lg shadow p-4 hover:shadow-md transition-all cursor-pointer"
                 onClick={() => handleResultClick(result.id)}
               >
                 <div className="flex justify-between mb-2">
@@ -620,7 +632,7 @@ const AdvancedSearchBox = ({ docType }) => {
                     Preview
                   </button>
                 </div>
-              </div>
+              </motion.div>
             ))}
           </div>
           

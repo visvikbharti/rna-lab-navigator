@@ -3,6 +3,12 @@
  * Phase 1: Foundation Setup
  */
 
+/* Import Colossal Design System */
+@import './colossal-design-tokens.css';
+@import './colossal-components.css';
+@import './particle-animations.css';
+@import './ripple-animation.css';
+
 /* =========================================
    DESIGN TOKENS & CSS VARIABLES
    ========================================= */
@@ -294,6 +300,46 @@
   to { opacity: 1; }
 }
 
+/* Colossal Animations */
+@keyframes cosmic-shift {
+  0% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0% 50%;
+  }
+}
+
+@keyframes aurora-wave {
+  0% {
+    transform: translateX(-100%) skewX(-15deg);
+    opacity: 0;
+  }
+  50% {
+    opacity: 0.8;
+  }
+  100% {
+    transform: translateX(100%) skewX(-15deg);
+    opacity: 0;
+  }
+}
+
+@keyframes dissolve {
+  0%, 100% {
+    opacity: 0;
+    filter: blur(10px);
+    transform: translateX(0);
+  }
+  50% {
+    opacity: 1;
+    filter: blur(0);
+    transform: translateX(5px);
+  }
+}
+
 @keyframes fade-in-up {
   from {
     opacity: 0;
@@ -412,6 +458,90 @@
   .high-contrast {
     border: 1px solid;
   }
+}
+
+/* =========================================
+   COLOSSAL-SPECIFIC OVERRIDES
+   ========================================= */
+
+/* Colossal Typography Extensions */
+.text-hero {
+  font-size: var(--text-5xl);
+  font-weight: 900;
+  line-height: 1;
+  background: linear-gradient(135deg, 
+    rgba(255, 255, 255, 0.95) 0%, 
+    rgba(255, 255, 255, 0.6) 100%
+  );
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  text-shadow: 0 0 80px rgba(255, 255, 255, 0.5);
+}
+
+.text-gradient {
+  background: var(--gradient-aurora);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* Colossal Card Variants */
+.card-glass {
+  background: var(--glass-bg);
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
+  border: 1px solid var(--glass-border);
+  box-shadow: var(--glass-shadow);
+}
+
+.card-glow {
+  position: relative;
+  overflow: hidden;
+}
+
+.card-glow::before {
+  content: '';
+  position: absolute;
+  top: -50%;
+  left: -50%;
+  width: 200%;
+  height: 200%;
+  background: radial-gradient(circle, 
+    var(--colossal-electric-blue) 0%, 
+    transparent 70%
+  );
+  opacity: 0;
+  transition: opacity var(--transition-slow);
+  pointer-events: none;
+}
+
+.card-glow:hover::before {
+  opacity: 0.1;
+}
+
+/* Background Animations */
+.bg-cosmic {
+  background: var(--gradient-cosmic);
+  background-size: 400% 400%;
+  animation: cosmic-shift 15s ease infinite;
+}
+
+.bg-aurora {
+  position: relative;
+  overflow: hidden;
+}
+
+.bg-aurora::before {
+  content: '';
+  position: absolute;
+  top: -50%;
+  left: -50%;
+  width: 200%;
+  height: 200%;
+  background: var(--gradient-aurora);
+  opacity: 0.3;
+  animation: aurora-wave 8s ease-in-out infinite;
 }
 
 /* =========================================

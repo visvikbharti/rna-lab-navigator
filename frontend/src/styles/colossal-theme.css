@@ -1,0 +1,234 @@
+/* Colossal Theme Integration */
+
+/* Apply Colossal theme to existing components */
+.App {
+  min-height: 100vh;
+  background: var(--gradient-cosmic);
+  color: white;
+  position: relative;
+  overflow-x: hidden;
+}
+
+/* Update existing chat components */
+.chat-container {
+  background: var(--glass-bg);
+  backdrop-filter: var(--glass-blur);
+  border: 1px solid var(--glass-border);
+  box-shadow: var(--glass-shadow);
+}
+
+.message-bubble {
+  background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(5px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.message-bubble.user {
+  background: linear-gradient(135deg, 
+    rgba(59, 130, 246, 0.2) 0%, 
+    rgba(6, 182, 212, 0.2) 100%
+  );
+}
+
+/* Update search components */
+.search-box {
+  background: var(--glass-bg);
+  backdrop-filter: var(--glass-blur);
+  border: 1px solid var(--glass-border);
+  transition: all var(--transition-base);
+}
+
+.search-box:focus-within {
+  border-color: var(--colossal-electric-blue);
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2);
+}
+
+/* Update answer cards */
+.answer-card {
+  background: var(--glass-bg);
+  backdrop-filter: var(--glass-blur);
+  border: 1px solid var(--glass-border);
+  box-shadow: var(--glass-shadow);
+  transition: all var(--transition-base);
+}
+
+.answer-card:hover {
+  transform: translateY(-4px);
+  box-shadow: var(--glass-shadow), var(--shadow-glow);
+}
+
+/* Update buttons globally */
+button, .btn {
+  position: relative;
+  overflow: hidden;
+  transition: all var(--transition-base);
+}
+
+button::before, .btn::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 0;
+  height: 0;
+  background: radial-gradient(circle, rgba(255, 255, 255, 0.3) 0%, transparent 70%);
+  transform: translate(-50%, -50%);
+  transition: width var(--transition-slow), height var(--transition-slow);
+}
+
+button:hover::before, .btn:hover::before {
+  width: 300px;
+  height: 300px;
+}
+
+/* Update form inputs */
+input, textarea, select {
+  background: var(--glass-bg);
+  backdrop-filter: blur(5px);
+  border: 1px solid var(--glass-border);
+  color: white;
+  transition: all var(--transition-base);
+}
+
+input::placeholder, textarea::placeholder {
+  color: rgba(255, 255, 255, 0.5);
+}
+
+input:focus, textarea:focus, select:focus {
+  outline: none;
+  border-color: var(--colossal-electric-blue);
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2);
+}
+
+/* Update dashboard cards */
+.dashboard-card {
+  background: var(--glass-bg);
+  backdrop-filter: var(--glass-blur);
+  border: 1px solid var(--glass-border);
+  box-shadow: var(--glass-shadow);
+}
+
+/* Update tables */
+.table-container {
+  background: var(--glass-bg);
+  backdrop-filter: var(--glass-blur);
+  border: 1px solid var(--glass-border);
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+table {
+  color: white;
+}
+
+thead {
+  background: rgba(255, 255, 255, 0.05);
+}
+
+tbody tr {
+  border-bottom: 1px solid var(--glass-border);
+}
+
+tbody tr:hover {
+  background: rgba(255, 255, 255, 0.05);
+}
+
+/* Update modals */
+.modal-backdrop {
+  background: rgba(10, 14, 39, 0.8);
+  backdrop-filter: blur(5px);
+}
+
+.modal-content {
+  background: var(--glass-bg);
+  backdrop-filter: var(--glass-blur-heavy);
+  border: 1px solid var(--glass-border);
+  box-shadow: var(--glass-shadow);
+}
+
+/* Update tooltips */
+.tooltip {
+  background: rgba(10, 14, 39, 0.9);
+  backdrop-filter: blur(10px);
+  border: 1px solid var(--glass-border);
+  color: white;
+}
+
+/* Update loading states */
+.loading-container {
+  background: var(--gradient-cosmic);
+}
+
+/* Update alerts */
+.alert {
+  background: var(--glass-bg);
+  backdrop-filter: var(--glass-blur);
+  border: 1px solid var(--glass-border);
+  color: white;
+}
+
+.alert-success {
+  border-color: var(--colossal-bio-emerald);
+  background: rgba(16, 185, 129, 0.1);
+}
+
+.alert-error {
+  border-color: var(--colossal-warm-coral);
+  background: rgba(249, 115, 22, 0.1);
+}
+
+.alert-info {
+  border-color: var(--colossal-electric-blue);
+  background: rgba(59, 130, 246, 0.1);
+}
+
+/* Update progress bars */
+.progress-bar {
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 100px;
+  overflow: hidden;
+}
+
+.progress-fill {
+  background: var(--gradient-aurora);
+  height: 100%;
+  transition: width var(--transition-slow);
+  position: relative;
+  overflow: hidden;
+}
+
+.progress-fill::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(90deg, 
+    transparent, 
+    rgba(255, 255, 255, 0.3), 
+    transparent
+  );
+  animation: wave 2s ease-in-out infinite;
+}
+
+/* Dark mode adjustments */
+[data-theme="dark"] {
+  --glass-bg: rgba(255, 255, 255, 0.02);
+  --glass-border: rgba(255, 255, 255, 0.05);
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .glass-card {
+    padding: var(--space-md);
+  }
+  
+  .section-title {
+    font-size: var(--text-3xl);
+  }
+  
+  .particle-container {
+    opacity: 0.5;
+  }
+}
