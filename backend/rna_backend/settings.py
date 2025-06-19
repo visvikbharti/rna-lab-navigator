@@ -54,6 +54,7 @@ INSTALLED_APPS = [
     "rest_framework_simplejwt.token_blacklist",
     "corsheaders",
     "axes",
+    "channels",  # For WebSocket support
     # Local apps
     "api",
     "api.analytics.apps.AnalyticsConfig",  # Analytics subapp
@@ -93,6 +94,10 @@ MIDDLEWARE = [
     "api.security.rate_limiting.RateLimitingMiddleware",  # API rate limiting
     "api.security.middleware.PIIFilterMiddleware",  # PII detection and filtering
     "api.security.connection.ConnectionTimeoutMiddleware",  # Connection timeout enforcement
+    # Performance monitoring
+    "api.middleware.performance.PerformanceMonitoringMiddleware",  # Performance tracking
+    "api.middleware.performance.DatabaseQueryOptimizationMiddleware",  # Query optimization
+    "api.middleware.performance.CacheWarmingMiddleware",  # Cache pre-warming
     # Analytics should be last to capture all data
     "api.analytics.middleware.AnalyticsMiddleware",  # Analytics data collection
 ]
@@ -116,8 +121,8 @@ ENABLE_RATE_LIMITING = True
 RATE_LIMIT_DEFAULT = "60/minute"  # Default rate limit for all API endpoints
 RATE_LIMIT_EXEMPTIONS = []  # List of exempted IPs or user IDs
 RATE_LIMIT_RULES = {
-    "/api/query/": "30/minute",  # Main search query endpoint
-    "/api/search/": "40/minute",  # General search endpoint
+    "/api/query/": "100/minute",  # Main search query endpoint - increased for better UX
+    "/api/search/": "100/minute",  # General search endpoint - increased for suggestions
     "/api/auth/login/": "10/minute",  # Login attempts
     "/api/auth/register/": "5/hour",  # Registration attempts
     "/api/upload/": "10/hour",  # Document uploads
@@ -239,8 +244,13 @@ USE_I18N = True
 USE_TZ = True
 
 # Celery settings
-CELERY_BROKER_URL = os.getenv("REDIS_URL", "redis://localhost:6379")
-CELERY_RESULT_BACKEND = os.getenv("REDIS_URL", "redis://localhost:6379")
+# Redis settings
+REDIS_HOST = os.getenv("REDIS_HOST", "localhost")
+REDIS_PORT = int(os.getenv("REDIS_PORT", "6379"))
+REDIS_URL = os.getenv("REDIS_URL", f"redis://{REDIS_HOST}:{REDIS_PORT}")
+
+CELERY_BROKER_URL = REDIS_URL
+CELERY_RESULT_BACKEND = REDIS_URL
 CELERY_ACCEPT_CONTENT = ["json"]
 CELERY_TASK_SERIALIZER = "json"
 CELERY_RESULT_SERIALIZER = "json"
@@ -254,15 +264,32 @@ AWS_ACCESS_KEY_ID = os.getenv("AWS_ACCESS_KEY_ID", "")
 AWS_SECRET_ACCESS_KEY = os.getenv("AWS_SECRET_ACCESS_KEY", "")
 AWS_S3_ENDPOINT = os.getenv("AWS_S3_ENDPOINT", "")
 
-# Cache settings (used for rate limiting)
+# Cache settings (used for rate limiting and performance)
 CACHES = {
     "default": {
         "BACKEND": "django_redis.cache.RedisCache",
         "LOCATION": os.getenv("REDIS_URL", "redis://localhost:6379/1"),
         "OPTIONS": {
             "CLIENT_CLASS": "django_redis.client.DefaultClient",
-        }
+            "COMPRESSOR": "django_redis.compressors.zlib.ZlibCompressor",
+            "CONNECTION_POOL_KWARGS": {"max_connections": 50},
+            # "PARSER_CLASS": "redis.connection.HiredisParser",  # Disabled as hiredis is optional
+        },
+        "TIMEOUT": 3600  # 1 hour cache timeout for better performance
     }
+}
+
+# Channels configuration
+ASGI_APPLICATION = "rna_backend.asgi.application"
+CHANNEL_LAYERS = {
+    "default": {
+        "BACKEND": "channels_redis.core.RedisChannelLayer",
+        "CONFIG": {
+            "hosts": [(os.getenv("REDIS_HOST", "localhost"), int(os.getenv("REDIS_PORT", "6379")))],
+            "capacity": 1500,
+            "expiry": 10,
+        },
+    },
 }
 
 # Weaviate settings
@@ -277,7 +304,7 @@ WEAVIATE_CA_CERT = os.getenv("WEAVIATE_CA_CERT", "")
 
 # OpenAI settings
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY", "")
-OPENAI_MODEL = os.getenv("OPENAI_MODEL", "gpt-4o")
+OPENAI_MODEL = os.getenv("OPENAI_MODEL", "o3")  # Most advanced OpenAI model for research accuracy
 OPENAI_EMBEDDING_MODEL = os.getenv("OPENAI_EMBEDDING_MODEL", "text-embedding-ada-002")
 OPENAI_TIMEOUT = int(os.getenv("OPENAI_TIMEOUT", "30"))
 
@@ -292,6 +319,27 @@ OLLAMA_TIMEOUT = int(os.getenv("OLLAMA_TIMEOUT", "60"))
 LOCAL_EMBEDDING_MODEL_PATH = os.getenv("LOCAL_EMBEDDING_MODEL_PATH", "")
 LOCAL_EMBEDDING_TOKENIZER_PATH = os.getenv("LOCAL_EMBEDDING_TOKENIZER_PATH", "")
 LOCAL_EMBEDDING_DIMENSION = int(os.getenv("LOCAL_EMBEDDING_DIMENSION", "768"))
+
+# Performance Optimizations
+# ========================
+
+# 1. Reduce default context chunks for faster responses
+RAG_MAX_CONTEXT_CHUNKS = 2  # Was 3
+
+# 2. Use modern models appropriate for research
+MODEL_TIERS = {
+    'small': 'gpt-3.5-turbo',  # Fast, affordable, good for simple queries
+    'default': 'gpt-3.5-turbo-1106',  # Latest GPT-3.5 with better performance
+    'large': 'gpt-4',  # For complex general tasks
+    'advanced': 'gpt-4-turbo-preview'  # Most powerful for complex multi-step problems
+}
+
+# 3. Query complexity thresholds
+QUERY_COMPLEXITY_THRESHOLDS = {
+    'simple': 0.3,  # Use small model
+    'medium': 0.7,  # Use default model
+    'complex': 1.0  # Use large model
+}
 
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/4.2/howto/static-files/
@@ -389,7 +437,7 @@ CHUNK_OVERLAP = 100
 # Analytics settings
 ANALYTICS_ENABLED = True
 ANALYTICS_RETENTION_DAYS = 90  # Days to keep raw analytics data
-ANALYTICS_MONITOR_SYSTEM = True  # Enable system performance monitoring
+ANALYTICS_MONITOR_SYSTEM = False  # Enable system performance monitoring - temporarily disabled due to PosixPath JSON serialization issue
 ANALYTICS_SENSITIVE_PATHS = [
     '/admin/',
     '/api/auth/',

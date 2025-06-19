@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import axios from 'axios';
+import { API_BASE_URL } from '../api/config';
 
 const EnhancedFeedbackForm = ({ queryId, onFeedbackSubmit }) => {
   // Basic feedback states
@@ -50,7 +51,7 @@ const EnhancedFeedbackForm = ({ queryId, onFeedbackSubmit }) => {
   useEffect(() => {
     const fetchCategories = async () => {
       try {
-        const response = await axios.get('/api/feedback/categories/');
+        const response = await axios.get(`${API_BASE_URL}/feedback/categories/`);
         const activeCategories = response.data.filter(cat => cat.is_active && cat.type === 'category');
         setAvailableCategories(activeCategories);
       } catch (error) {
@@ -124,7 +125,7 @@ const EnhancedFeedbackForm = ({ queryId, onFeedbackSubmit }) => {
 
     // Prepare the payload
     const feedbackData = {
-      query_id: queryId,
+      query_history_id: queryId, // Backend expects query_history_id, not query_id
       rating: feedbackType,
       comment: comment,
       specific_issues: specificIssues,
@@ -142,7 +143,7 @@ const EnhancedFeedbackForm = ({ queryId, onFeedbackSubmit }) => {
     };
 
     try {
-      await axios.post('/api/feedback/feedback/', feedbackData);
+      await axios.post(`${API_BASE_URL}/feedback/`, feedbackData);
 
       setSubmitted(true);
       
@@ -253,8 +254,8 @@ const EnhancedFeedbackForm = ({ queryId, onFeedbackSubmit }) => {
           </button>
         </div>
       ) : (
-        <form onSubmit={handleSubmit} className="bg-gray-50 p-4 rounded-lg">
-          <h3 className="font-medium text-lg mb-3">
+        <form onSubmit={handleSubmit} className="bg-gray-50 dark:bg-gray-800 p-4 rounded-lg">
+          <h3 className="font-medium text-lg mb-3 text-gray-900 dark:text-gray-100">
             {feedbackType === 'thumbs_up' 
               ? "What was helpful?" 
               : feedbackType === 'thumbs_down' 
@@ -264,13 +265,13 @@ const EnhancedFeedbackForm = ({ queryId, onFeedbackSubmit }) => {
           
           {/* Basic feedback section */}
           <div className="mb-4">
-            <label className="block text-gray-700 text-sm font-medium mb-2">
+            <label className="block text-gray-700 dark:text-gray-300 text-sm font-medium mb-2">
               Feedback category:
             </label>
             <select
               value={category}
               onChange={(e) => setCategory(e.target.value)}
-              className="w-full border rounded-lg p-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full border border-gray-300 dark:border-gray-600 rounded-lg p-2 focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
             >
               {availableCategories.map((cat) => (
                 <option key={cat.id} value={cat.id}>
@@ -282,7 +283,7 @@ const EnhancedFeedbackForm = ({ queryId, onFeedbackSubmit }) => {
           
           {feedbackType !== 'thumbs_up' && (
             <div className="mb-4">
-              <label className="block text-gray-700 text-sm font-medium mb-2">
+              <label className="block text-gray-700 dark:text-gray-300 text-sm font-medium mb-2">
                 Select any issues: (optional)
               </label>
               <div className="flex flex-wrap gap-2">
@@ -294,7 +295,7 @@ const EnhancedFeedbackForm = ({ queryId, onFeedbackSubmit }) => {
                     className={`text-xs py-1 px-2 rounded-full ${
                       specificIssues.includes(issue)
                         ? 'bg-blue-600 text-white'
-                        : 'bg-gray-200 text-gray-800 hover:bg-gray-300'
+                        : 'bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-200 hover:bg-gray-300 dark:hover:bg-gray-600'
                     }`}
                   >
                     {issue}
@@ -305,13 +306,13 @@ const EnhancedFeedbackForm = ({ queryId, onFeedbackSubmit }) => {
           )}
           
           <div className="mb-4">
-            <label className="block text-gray-700 text-sm font-medium mb-2" htmlFor="comment">
+            <label className="block text-gray-700 dark:text-gray-300 text-sm font-medium mb-2" htmlFor="comment">
               Comments: (optional)
             </label>
             <textarea
               id="comment"
               rows="3"
-              className="w-full border rounded-lg p-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full border border-gray-300 dark:border-gray-600 rounded-lg p-2 focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
               placeholder={feedbackType === 'thumbs_up' 
                 ? "What made this answer helpful?" 
                 : "Please provide any additional feedback..."}
@@ -336,8 +337,8 @@ const EnhancedFeedbackForm = ({ queryId, onFeedbackSubmit }) => {
           
           {/* Detailed feedback section */}
           {showDetailedForm && (
-            <div className="border-t border-gray-200 pt-4 mb-4">
-              <h4 className="font-medium text-md mb-3">Detailed Ratings</h4>
+            <div className="border-t border-gray-200 dark:border-gray-700 pt-4 mb-4">
+              <h4 className="font-medium text-md mb-3 text-gray-900 dark:text-gray-100">Detailed Ratings</h4>
               
               <div className="space-y-2 mb-4">
                 <StarRating 
@@ -382,7 +383,7 @@ const EnhancedFeedbackForm = ({ queryId, onFeedbackSubmit }) => {
                           className={`text-xs py-1 px-2 rounded-full ${
                             sourceQualityIssues.includes(issue)
                               ? 'bg-blue-600 text-white'
-                              : 'bg-gray-200 text-gray-800 hover:bg-gray-300'
+                              : 'bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-200 hover:bg-gray-300 dark:hover:bg-gray-600'
                           }`}
                         >
                           {issue}
@@ -424,7 +425,7 @@ const EnhancedFeedbackForm = ({ queryId, onFeedbackSubmit }) => {
           )}
           
           {error && (
-            <div className="text-red-600 mb-4">
+            <div className="text-red-600 dark:text-red-400 mb-4">
               {error}
             </div>
           )}

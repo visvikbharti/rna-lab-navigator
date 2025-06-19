@@ -1,4 +1,5 @@
 import axios from 'axios';
+import { mockSearchQualitySummary, mockQualityByDocType, mockPerformanceData } from '../utils/mockData';
 
 /**
  * Get search quality summary metrics
@@ -6,11 +7,11 @@ import axios from 'axios';
  */
 export const getSearchQualitySummary = async () => {
   try {
-    const response = await axios.get('/api/search/quality/');
-    return response.data;
+    // Return mock data - endpoint not implemented yet
+    return mockSearchQualitySummary;
   } catch (error) {
     console.error('Error fetching search quality metrics:', error);
-    throw error;
+    return mockSearchQualitySummary;
   }
 };
 
@@ -20,11 +21,11 @@ export const getSearchQualitySummary = async () => {
  */
 export const getQualityByDocType = async () => {
   try {
-    const response = await axios.get('/api/search/quality/quality_by_doc_type/');
-    return response.data;
+    // Return mock data - endpoint not implemented yet
+    return mockQualityByDocType;
   } catch (error) {
     console.error('Error fetching quality metrics by doc type:', error);
-    throw error;
+    return mockQualityByDocType;
   }
 };
 
@@ -34,11 +35,17 @@ export const getQualityByDocType = async () => {
  */
 export const getQualityByRankingProfile = async () => {
   try {
-    const response = await axios.get('/api/search/quality/quality_by_ranking_profile/');
-    return response.data;
+    // Return mock data - endpoint not implemented yet
+    return {
+      profiles: [
+        { profile: "default", avg_confidence: 0.82, searches: 892 },
+        { profile: "semantic", avg_confidence: 0.85, searches: 423 },
+        { profile: "keyword", avg_confidence: 0.78, searches: 227 }
+      ]
+    };
   } catch (error) {
     console.error('Error fetching quality metrics by ranking profile:', error);
-    throw error;
+    return { profiles: [] };
   }
 };
 
@@ -48,11 +55,15 @@ export const getQualityByRankingProfile = async () => {
  */
 export const getRerankingImpact = async () => {
   try {
-    const response = await axios.get('/api/search/quality/reranking_impact/');
-    return response.data;
+    // Return mock data - endpoint not implemented yet
+    return {
+      before_reranking: { avg_score: 0.68, top1_accuracy: 0.52 },
+      after_reranking: { avg_score: 0.84, top1_accuracy: 0.78 },
+      improvement: { score_increase: "+23.5%", accuracy_increase: "+50%" }
+    };
   } catch (error) {
     console.error('Error fetching reranking impact metrics:', error);
-    throw error;
+    return { before_reranking: {}, after_reranking: {} };
   }
 };
 

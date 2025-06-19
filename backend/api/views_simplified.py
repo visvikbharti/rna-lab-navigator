@@ -16,6 +16,8 @@ import hashlib
 import json
 import time
 import random
+import asyncio
+import uuid
 
 from .models import QueryHistory, Feedback, QueryCache, Figure, Document
 from .serializers import (
@@ -119,6 +121,8 @@ class QueryView(APIView):
         if not doc_type or doc_type == '':
             doc_type = 'all'
         use_cache = serializer.validated_data.get('use_cache', True)
+        use_enhanced = serializer.validated_data.get('use_enhanced', True)
+        session_id = serializer.validated_data.get('session_id', str(uuid.uuid4()))
         
         # Check cache if enabled
         if use_cache:
@@ -143,6 +147,46 @@ class QueryView(APIView):
             except QueryCache.DoesNotExist:
                 # Not in cache, continue with query processing
                 pass
+        
+        # Try enhanced RAG first if available and requested
+        if use_enhanced:
+            try:
+                from .rag.enhanced_rag import get_enhanced_rag_pipeline
+                enhanced_rag = get_enhanced_rag_pipeline()
+                
+                # Process with enhanced RAG
+                loop = asyncio.new_event_loop()
+                asyncio.set_event_loop(loop)
+                
+                user_context = {
+                    "doc_type": doc_type,
+                    "use_cache": use_cache
+                }
+                
+                result = loop.run_until_complete(
+                    enhanced_rag.process_query(query_text, session_id, user_context)
+                )
+                
+                loop.close()
+                
+                # Return enhanced result
+                return Response({
+                    'query': query_text,
+                    'answer': result.get('answer'),
+                    'sources': result.get('sources', []),
+                    'search_results': result.get('search_results', []),
+                    'confidence_score': result.get('confidence_score', 0.5),
+                    'reasoning_trace': result.get('reasoning_trace'),
+                    'session_id': session_id,
+                    'is_enhanced': True,
+                    'from_cache': False,
+                    'processing_time': result.get('processing_time', 0),
+                    'query_id': result.get('query_id')
+                })
+                
+            except Exception as e:
+                print(f"Enhanced RAG not available or failed: {e}")
+                # Fall through to standard processing
         
         # DEMO: Mock retrieval and answer generation
         start_time = time.time()
@@ -236,7 +280,8 @@ class QueryView(APIView):
             'search_results': search_results,  # Include search results with snippets
             'confidence_score': confidence_score,
             'from_cache': False,
-            'processing_time': processing_time
+            'processing_time': processing_time,
+            'query_id': query_history.id  # Include query_id for feedback
         })
 
 class TestRAGView(APIView):

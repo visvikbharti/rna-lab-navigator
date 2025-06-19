@@ -21,8 +21,17 @@ from django.db.models import Avg, Sum, Count
 import numpy as np
 import hashlib
 import json
+import time
+import asyncio
+import uuid
 from sentence_transformers import CrossEncoder
 from .offline import get_llm_client, get_cross_encoder, is_offline_mode
+
+# Import multi-hop reasoning
+from .rag.multi_hop_reasoning import multi_hop_engine
+
+# Import enhanced RAG system
+from .rag.enhanced_rag import get_enhanced_rag_pipeline, EnhancedRAGPipeline
 
 from .models import QueryHistory, Feedback, QueryCache, Figure
 from .serializers import (
@@ -52,6 +61,7 @@ class HealthCheckView(APIView):
 class QueryView(APIView):
     """
     RAG endpoint for querying the vector store and generating answers.
+    Supports both standard and enhanced RAG pipelines.
     """
     
     def __init__(self, *args, **kwargs):
@@ -68,6 +78,13 @@ class QueryView(APIView):
         except Exception as e:
             print(f"Warning: Could not load cross-encoder: {e}")
             self.cross_encoder = None
+            
+        # Initialize enhanced RAG system if available
+        try:
+            self.enhanced_rag = get_enhanced_rag_pipeline()
+        except Exception as e:
+            print(f"Warning: Could not load enhanced RAG system: {e}")
+            self.enhanced_rag = None
             
     def check_query_cache(self, query, doc_type=""):
         """
@@ -154,14 +171,28 @@ class QueryView(APIView):
         Returns:
             str: The selected model ID
         """
+        # Try to use research query classifier for intelligent routing
+        try:
+            from api.utils.research_query_classifier import ResearchQueryClassifier
+            model_config = getattr(settings, 'MODEL_TIERS', {})
+            
+            # Use research classifier for model selection
+            selected_model, reasoning = ResearchQueryClassifier.get_model_for_query(query, model_config)
+            print(f"Query routing: {reasoning}")  # For debugging
+            return selected_model
+            
+        except ImportError:
+            # Fallback to existing logic if classifier not available
+            pass
+        
         # Get model configuration
         model_config = getattr(settings, 'MODEL_TIERS', {})
         if not model_config:
             # Default configuration if not in settings
             model_config = {
-                'small': 'gpt-3.5-turbo',
-                'default': settings.OPENAI_MODEL,
-                'large': 'gpt-4o'
+                'small': 'gpt-4.1-mini',
+                'default': 'o4-mini',
+                'large': 'gpt-4.1'
             }
         
         # Check if tier exists in config
@@ -173,11 +204,11 @@ class QueryView(APIView):
         
         # Route based on complexity
         if query_complexity < 0.3:
-            return model_config.get('small', 'gpt-3.5-turbo')
+            return model_config.get('small', 'gpt-4.1-mini')
         elif query_complexity < 0.7:
-            return model_config.get('default', settings.OPENAI_MODEL)
+            return model_config.get('default', 'o4-mini')
         else:
-            return model_config.get('large', 'gpt-4o')
+            return model_config.get('large', 'gpt-4.1')
     
     def measure_query_complexity(self, query, results):
         """
@@ -297,7 +328,9 @@ class QueryView(APIView):
         
         return reranked_results
     
-    def build_prompt(self, query, results, max_results=3):
+    def build_prompt(self, query, results, max_results=None):
+        if max_results is None:
+            max_results = getattr(settings, 'RAG_MAX_CONTEXT_CHUNKS', 3)
         """
         Build a prompt for the LLM with the query and retrieved context.
         
@@ -382,7 +415,9 @@ class QueryView(APIView):
         
         return prompt
     
-    def calculate_confidence_score(self, answer, results, max_results=3):
+    def calculate_confidence_score(self, answer, results, max_results=None):
+        if max_results is None:
+            max_results = getattr(settings, 'RAG_MAX_CONTEXT_CHUNKS', 3)
         """
         Calculate a confidence score for the answer.
         
@@ -431,7 +466,9 @@ class QueryView(APIView):
         
         return confidence
     
-    def extract_sources(self, results, max_results=3):
+    def extract_sources(self, results, max_results=None):
+        if max_results is None:
+            max_results = getattr(settings, 'RAG_MAX_CONTEXT_CHUNKS', 3)
         """
         Extract source information from results.
         
@@ -495,6 +532,7 @@ class QueryView(APIView):
         """
         Process a query and return a generated answer with sources.
         Supports both standard response and streaming response.
+        Uses enhanced RAG system when available.
         """
         serializer = QuerySerializer(data=request.data)
         
@@ -508,6 +546,8 @@ class QueryView(APIView):
         use_cache = serializer.validated_data.get("use_cache", True)
         model_tier = serializer.validated_data.get("model_tier", "default")
         stream = request.query_params.get('stream', 'false').lower() == 'true'
+        use_enhanced = serializer.validated_data.get("use_enhanced", True)
+        session_id = serializer.validated_data.get("session_id", str(uuid.uuid4()))
         
         # Check cache first if enabled
         if use_cache and not stream:
@@ -515,6 +555,47 @@ class QueryView(APIView):
             if cache_hit:
                 return Response(cache_hit, status=status.HTTP_200_OK)
         
+        # Use enhanced RAG if available and requested
+        if use_enhanced and self.enhanced_rag:
+            try:
+                # Process with enhanced RAG system
+                loop = asyncio.new_event_loop()
+                asyncio.set_event_loop(loop)
+                
+                user_context = {
+                    "doc_type": doc_type,
+                    "use_hybrid": use_hybrid,
+                    "hybrid_alpha": hybrid_alpha,
+                    "model_tier": model_tier
+                }
+                
+                result = loop.run_until_complete(
+                    self.enhanced_rag.process_query(query, session_id, user_context)
+                )
+                
+                loop.close()
+                
+                # Convert enhanced result to standard format
+                response_data = {
+                    "answer": result["answer"],
+                    "sources": result.get("sources", []),
+                    "figures": result.get("figures", []),
+                    "confidence_score": result.get("confidence_score", 0.5),
+                    "status": "success" if result.get("confidence_score", 0.5) >= 0.45 else "low_confidence",
+                    "query_id": result.get("query_id"),
+                    "model_used": result.get("model_used", "unknown"),
+                    "reasoning_trace": result.get("reasoning_trace"),
+                    "session_id": session_id,
+                    "is_enhanced": True
+                }
+                
+                return Response(response_data, status=status.HTTP_200_OK)
+                
+            except Exception as e:
+                print(f"Enhanced RAG failed, falling back to standard: {e}")
+                # Fall through to standard processing
+        
+        # Standard RAG processing
         # Search Weaviate for relevant documents
         results = search_weaviate(
             query, 
@@ -536,6 +617,7 @@ class QueryView(APIView):
         
         # Select model based on tier and query complexity
         selected_model = self.select_model(query, reranked_results, model_tier)
+        print(f"[RAG] Query: '{query[:50]}...' → Using model: {selected_model}")
         
         try:
             # Set up LLM client (OpenAI online or local offline)
@@ -784,6 +866,111 @@ class QueryView(APIView):
 
 
 @permission_classes([AllowAny])
+class MultiHopQueryView(APIView):
+    """
+    Advanced query endpoint using multi-hop reasoning for complex questions.
+    Breaks down queries into sub-questions and provides reasoning traces.
+    """
+    
+    def post(self, request):
+        """
+        Process a complex query using multi-hop reasoning
+        """
+        serializer = QuerySerializer(data=request.data)
+        
+        if not serializer.is_valid():
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        
+        query = serializer.validated_data["query"]
+        doc_type = serializer.validated_data.get("doc_type", "all")
+        use_multihop = serializer.validated_data.get("use_multihop", True)
+        
+        # Check if query is complex enough for multi-hop
+        is_complex = self._is_complex_query(query)
+        
+        if not use_multihop or not is_complex:
+            # Fall back to standard query processing
+            query_view = QueryView()
+            return query_view.post(request)
+        
+        try:
+            # Process with multi-hop reasoning
+            print(f"[Multi-Hop] Processing complex query: {query}")
+            
+            # Use multi-hop reasoning engine
+            enhanced_answer = multi_hop_engine.process_query_sync(query, doc_type)
+            
+            # Format reasoning trace for frontend
+            reasoning_trace = []
+            for step in enhanced_answer.reasoning_trace:
+                reasoning_trace.append({
+                    'step_number': step.step_number,
+                    'description': step.description,
+                    'conclusion': step.conclusion,
+                    'confidence': step.confidence,
+                    'source_count': len(step.evidence.sources)
+                })
+            
+            # Save to query history
+            query_history = QueryHistory.objects.create(
+                query_text=query,
+                answer=enhanced_answer.answer,
+                confidence_score=enhanced_answer.overall_confidence,
+                sources=json.dumps(enhanced_answer.sources),
+                doc_type=doc_type,
+                processing_time=0  # TODO: Track actual time
+            )
+            
+            # Return enhanced response
+            response_data = {
+                "query": query,
+                "answer": enhanced_answer.answer,
+                "sources": enhanced_answer.sources,
+                "confidence_score": enhanced_answer.overall_confidence,
+                "reasoning_trace": reasoning_trace,
+                "knowledge_gaps": enhanced_answer.knowledge_gaps,
+                "follow_up_questions": enhanced_answer.follow_up_questions,
+                "is_multihop": True,
+                "query_id": query_history.id,
+                "from_cache": False
+            }
+            
+            return Response(response_data, status=status.HTTP_200_OK)
+            
+        except Exception as e:
+            print(f"Error in multi-hop reasoning: {e}")
+            # Fall back to standard query
+            query_view = QueryView()
+            return query_view.post(request)
+    
+    def _is_complex_query(self, query: str) -> bool:
+        """
+        Determine if a query is complex enough to benefit from multi-hop reasoning
+        """
+        # Simple heuristics for complexity
+        complex_indicators = [
+            'compare', 'versus', 'vs', 'difference between',
+            'how does', 'why does', 'what causes',
+            'relationship between', 'effect of', 'impact of',
+            'best way to', 'optimal method', 'most effective',
+            'advantages and disadvantages', 'pros and cons'
+        ]
+        
+        query_lower = query.lower()
+        
+        # Check for complex indicators
+        has_complex_indicator = any(indicator in query_lower for indicator in complex_indicators)
+        
+        # Check query length (complex queries tend to be longer)
+        is_long_query = len(query.split()) > 10
+        
+        # Check for multiple concepts (presence of 'and', 'or', etc.)
+        has_multiple_concepts = any(word in query_lower for word in ['and', 'or', 'but', 'however'])
+        
+        return has_complex_indicator or (is_long_query and has_multiple_concepts)
+
+
+@permission_classes([AllowAny])
 class FeedbackViewSet(ModelViewSet):
     """
     ViewSet for managing user feedback on answers.
@@ -991,6 +1178,148 @@ class QueryCacheView(APIView):
             count = QueryCache.objects.count()
             QueryCache.objects.all().delete()
             return Response({"message": f"{count} cache entries cleared"})
+
+
+@permission_classes([AllowAny])
+class EnhancedRAGView(APIView):
+    """
+    Enhanced RAG endpoint with conversation memory and reasoning traces.
+    """
+    
+    def post(self, request):
+        """
+        Process a query with the enhanced RAG pipeline.
+        """
+        query = request.data.get('query', '')
+        session_id = request.data.get('session_id', str(uuid.uuid4()))
+        user_context = request.data.get('user_context', {})
+        
+        if not query:
+            return Response(
+                {"error": "Field 'query' is required"}, 
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        try:
+            enhanced_rag = get_enhanced_rag_pipeline()
+            
+            # Process query asynchronously
+            loop = asyncio.new_event_loop()
+            asyncio.set_event_loop(loop)
+            
+            result = loop.run_until_complete(
+                enhanced_rag.process_query(query, session_id, user_context)
+            )
+            
+            loop.close()
+            
+            return Response(result)
+            
+        except Exception as e:
+            import traceback
+            traceback.print_exc()
+            return Response(
+                {"error": f"Enhanced RAG error: {str(e)}"}, 
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
+
+
+@permission_classes([AllowAny])
+class AutocompleteView(APIView):
+    """
+    Intelligent auto-complete suggestions based on query context.
+    """
+    
+    def post(self, request):
+        """
+        Get auto-complete suggestions for a partial query.
+        """
+        partial_query = request.data.get('partial_query', '')
+        session_id = request.data.get('session_id', '')
+        limit = request.data.get('limit', 5)
+        
+        if not partial_query:
+            return Response(
+                {"error": "Field 'partial_query' is required"}, 
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        try:
+            enhanced_rag = get_enhanced_rag_pipeline()
+            suggestions = enhanced_rag.get_autocomplete_suggestions(
+                partial_query, 
+                session_id,
+                limit=limit
+            )
+            
+            return Response({
+                'suggestions': suggestions
+            })
+            
+        except Exception as e:
+            return Response(
+                {"error": f"Autocomplete error: {str(e)}"}, 
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
+
+
+@permission_classes([AllowAny])
+class ConversationHistoryView(APIView):
+    """
+    Access conversation history for a session.
+    """
+    
+    def get(self, request, session_id):
+        """
+        Get conversation history for a specific session.
+        """
+        try:
+            enhanced_rag = get_enhanced_rag_pipeline()
+            
+            # Get conversation from memory
+            conversation = enhanced_rag.conversation_memory.get_conversation(session_id)
+            
+            # Format for response
+            history = []
+            for turn in conversation:
+                history.append({
+                    'query': turn['query'],
+                    'answer': turn['answer'],
+                    'timestamp': turn.get('timestamp'),
+                    'confidence_score': turn.get('confidence_score'),
+                    'sources': turn.get('sources', [])
+                })
+            
+            return Response({
+                'session_id': session_id,
+                'history': history,
+                'turn_count': len(history)
+            })
+            
+        except Exception as e:
+            return Response(
+                {"error": f"Conversation history error: {str(e)}"}, 
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
+    
+    def delete(self, request, session_id):
+        """
+        Clear conversation history for a session.
+        """
+        try:
+            enhanced_rag = get_enhanced_rag_pipeline()
+            enhanced_rag.conversation_memory.clear_conversation(session_id)
+            
+            return Response({
+                'status': 'success',
+                'message': f'Conversation history cleared for session {session_id}'
+            })
+            
+        except Exception as e:
+            return Response(
+                {"error": f"Clear history error: {str(e)}"}, 
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
 
 
 @permission_classes([AllowAny])

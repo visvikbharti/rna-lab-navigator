@@ -50,6 +50,9 @@ class QuerySerializer(serializers.Serializer):
     hybrid_alpha = serializers.FloatField(required=False, default=0.75)
     use_cache = serializers.BooleanField(required=False, default=True)
     model_tier = serializers.CharField(required=False, default="default")
+    use_enhanced = serializers.BooleanField(required=False, default=True)
+    session_id = serializers.CharField(required=False, allow_blank=True)
+    use_multihop = serializers.BooleanField(required=False, default=False)
 
 
 class QueryHistorySerializer(serializers.ModelSerializer):
@@ -216,3 +219,38 @@ class FigureSerializer(serializers.ModelSerializer):
         if obj.file and hasattr(obj.file, 'url') and request is not None:
             return request.build_absolute_uri(obj.file.url)
         return None
+
+
+class ReasoningStepSerializer(serializers.Serializer):
+    """Serializer for reasoning trace steps"""
+    step_number = serializers.IntegerField()
+    description = serializers.CharField()
+    conclusion = serializers.CharField()
+    confidence = serializers.FloatField()
+    source_count = serializers.IntegerField()
+
+
+class EnhancedQueryResponseSerializer(serializers.Serializer):
+    """Serializer for enhanced query responses with reasoning traces"""
+    answer = serializers.CharField()
+    sources = serializers.ListField(child=serializers.DictField())
+    figures = serializers.ListField(child=serializers.DictField(), required=False)
+    confidence_score = serializers.FloatField()
+    status = serializers.CharField()
+    query_id = serializers.IntegerField(required=False)
+    model_used = serializers.CharField(required=False)
+    reasoning_trace = serializers.ListField(
+        child=ReasoningStepSerializer(),
+        required=False
+    )
+    session_id = serializers.CharField(required=False)
+    is_enhanced = serializers.BooleanField(default=False)
+    is_multihop = serializers.BooleanField(default=False)
+    knowledge_gaps = serializers.ListField(
+        child=serializers.CharField(),
+        required=False
+    )
+    follow_up_questions = serializers.ListField(
+        child=serializers.CharField(),
+        required=False
+    )

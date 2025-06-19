@@ -108,6 +108,28 @@ app.conf.beat_schedule = {
         'task': 'api.backup.tasks.run_full_backup',
         'schedule': crontab(day_of_week=0, hour=1, minute=0),
     },
+    
+    # Paper monitoring tasks
+    # Check for new papers every 6 hours
+    'check-new-papers': {
+        'task': 'api.papers.tasks.check_new_papers',
+        'schedule': crontab(hour='*/6'),
+    },
+    # Generate weekly paper digest (Monday 9 AM)
+    'weekly-paper-digest': {
+        'task': 'api.papers.tasks.generate_weekly_digest',
+        'schedule': crontab(day_of_week=1, hour=9, minute=0),
+    },
+    # Analyze paper trends daily (11 PM)
+    'analyze-paper-trends': {
+        'task': 'api.papers.tasks.analyze_paper_trends',
+        'schedule': crontab(hour=23, minute=0),
+    },
+    # Auto-ingest flagged papers daily (4 AM)
+    'ingest-flagged-papers': {
+        'task': 'api.papers.tasks.ingest_flagged_papers',
+        'schedule': crontab(hour=4, minute=0),
+    },
 }
 
 @app.task(bind=True, ignore_result=True)

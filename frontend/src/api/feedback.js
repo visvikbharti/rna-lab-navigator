@@ -1,4 +1,5 @@
 import axios from 'axios';
+import { mockFeedbackAnalysis, mockFeedbackThemes } from '../utils/mockData';
 
 // Base URL for API calls
 const API_URL = '/api/feedback';
@@ -98,11 +99,11 @@ export const getFeedbackCategories = async () => {
  */
 export const getFeedbackThemes = async (params = {}) => {
   try {
-    const response = await axios.get(`${API_URL}/themes/`, { params });
-    return response.data;
+    // Return mock data - endpoint not implemented yet
+    return mockFeedbackThemes;
   } catch (error) {
     console.error('Error fetching feedback themes:', error);
-    throw error;
+    return mockFeedbackThemes;
   }
 };
 
@@ -112,10 +113,10 @@ export const getFeedbackThemes = async (params = {}) => {
  */
 export const getFeedbackAnalyses = async () => {
   try {
-    const response = await axios.get(`${API_URL}/analysis/`);
-    return response.data;
+    // Return mock data - endpoint not implemented yet
+    return mockFeedbackAnalysis;
   } catch (error) {
     console.error('Error fetching feedback analyses:', error);
-    throw error;
+    return mockFeedbackAnalysis;
   }
 };

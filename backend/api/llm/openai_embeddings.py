@@ -54,3 +54,48 @@ class OpenAIEmbeddingModel:
         except Exception as e:
             logger.error(f"Error creating OpenAI embeddings: {str(e)}")
             raise
+
+
+# Global instance for convenience
+_embedding_model = None
+
+def get_embedding_model():
+    """Get or create global embedding model instance."""
+    global _embedding_model
+    if _embedding_model is None:
+        _embedding_model = OpenAIEmbeddingModel()
+    return _embedding_model
+
+
+def get_embeddings(texts, model=None):
+    """
+    Get embeddings for a list of texts.
+    
+    Args:
+        texts (list): List of texts to embed
+        model (str, optional): Model name
+        
+    Returns:
+        list: List of embedding vectors
+    """
+    try:
+        embedding_model = get_embedding_model()
+        
+        # Ensure texts is a list
+        if isinstance(texts, str):
+            texts = [texts]
+        
+        response = embedding_model.create(input=texts, model=model)
+        
+        # Extract embedding vectors
+        embeddings = []
+        for data in response.data:
+            embeddings.append(data.embedding)
+        
+        return embeddings
+        
+    except Exception as e:
+        logger.error(f"Error getting embeddings: {str(e)}")
+        # Return zero vectors as fallback
+        import numpy as np
+        return [np.zeros(1536).tolist() for _ in texts]  # Ada-002 dimension

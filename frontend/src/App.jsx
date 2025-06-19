@@ -1,391 +1,490 @@
 import { useState } from 'react';
-import { BrowserRouter as Router, Route, Routes, Link } from 'react-router-dom';
+import { BrowserRouter as Router, Route, Routes, Link, Navigate } from 'react-router-dom';
 import { Toaster } from 'react-hot-toast';
-import { motion } from 'framer-motion';
-import ChatBox from './components/ChatBox';
-import EnhancedChatBox from './components/EnhancedChatBox';
-import AdvancedSearchBox from './components/AdvancedSearchBox';
+import { motion, AnimatePresence } from 'framer-motion';
+import ErrorBoundary from './components/ErrorBoundary';
+import { NotificationProvider } from './components/NotificationSystem';
 import EnhancedSearchInterface from './components/EnhancedSearchInterface';
 import FilterChips from './components/FilterChips';
 import ProtocolUploader from './components/ProtocolUploader';
+import DocumentUploader from './components/DocumentUploader';
+import GapExplorer from './components/GapExplorer';
+import CrossPaperInsights from './components/CrossPaperInsights';
+import HypothesisExplorer from './components/HypothesisExplorer';
+import ProtocolBuilder from './components/ProtocolBuilder';
+import ExperimentMapper from './components/ExperimentMapper';
+import KnowledgeGraphExplorer from './components/KnowledgeGraphExplorer';
 import { FeedbackAnalyticsDashboard } from './components/feedback';
 import SearchQualityDashboard from './components/SearchQualityDashboard';
 import SecurityAuditDashboard from './components/SecurityAuditDashboard';
-import EnhancedComponentsDemo from './components/enhanced/Demo';
-import ColossalShowcase from './pages/ColossalShowcase';
+import SimpleSearch from './SimpleSearch';
 import { AnimationProvider } from './contexts/AnimationContext';
 import { DarkModeProvider } from './contexts/DarkModeContext';
 import DarkModeToggle from './components/DarkModeToggle';
-import { ParticleBackground, FloatingOrbs, GlassCard, GradientText, Navigation } from './components/enhanced';
-import './App.css';
+import { ParticleBackground, FloatingOrbs, GlassCard, GradientText } from './components/enhanced';
+import { MagnifyingGlassIcon, BeakerIcon, DocumentTextIcon, ChartBarIcon, ShieldCheckIcon, MapIcon, CloudArrowUpIcon, SparklesIcon, LightBulbIcon, LinkIcon, Bars3Icon, XMarkIcon, CubeTransparentIcon } from '@heroicons/react/24/outline';
+import MultiAgentAnalysis from './components/MultiAgentAnalysis';
+import ProtocolDesigner from './components/ProtocolDesigner';
+import TestRoutes from './TestRoutes';
+// Use clean, working CSS
+import './styles/app-clean.css';
 
-function MainApp() {
-  const [docType, setDocType] = useState('all');
-  const [enhancedUI, setEnhancedUI] = useState(true);
-
+function Navigation() {
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  
   return (
-    <div className="min-h-screen bg-deep-space dark:bg-gray-900 transition-all duration-500 relative overflow-hidden">
-      {/* Background Effects */}
-      {enhancedUI && (
-        <>
-          <ParticleBackground type="dna" count={100} />
-          <FloatingOrbs />
-        </>
-      )}
-      
-      <div className="container mx-auto px-4 py-8 max-w-4xl relative z-10">
-        <motion.header 
-          initial={{ opacity: 0, y: -20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6 }}
-          className="mb-8 text-center"
-        >
-          <div className="flex justify-between items-center mb-4">
-            <div className="flex-1">
-              <button
-                onClick={() => setEnhancedUI(!enhancedUI)}
-                className="text-sm text-white/60 hover:text-white/80 transition-colors"
-              >
-                {enhancedUI ? '🎨 Classic UI' : '✨ Enhanced UI'}
-              </button>
-            </div>
-            <div className="flex-1">
-              {enhancedUI ? (
-                <GradientText
-                  text="RNA Lab Navigator"
-                  className="text-4xl md:text-5xl font-bold mb-2"
-                  gradient="from-electric-blue via-plasma-cyan to-bio-emerald"
-                />
-              ) : (
-                <h1 className="text-3xl font-bold text-gray-800 dark:text-gray-100 mb-2">RNA Lab Navigator</h1>
-              )}
-              <p className={enhancedUI ? "text-white/80" : "text-gray-600 dark:text-gray-400"}>
-                Your AI assistant for lab protocols, papers, and theses
-              </p>
-              <Link to="/showcase" className={enhancedUI ? "text-sm text-plasma-cyan hover:text-electric-blue mt-2 inline-block transition-colors" : "text-sm text-primary-600 hover:text-primary-700 mt-2 inline-block"}>
-                ✨ View Colossal Showcase →
-              </Link>
-            </div>
-            <div className="flex-1 flex justify-end">
-              <DarkModeToggle />
+    <motion.nav 
+      initial={{ y: -100, opacity: 0 }}
+      animate={{ y: 0, opacity: 1 }}
+      transition={{ duration: 0.6, ease: "easeOut" }}
+      className="fixed top-0 left-0 right-0 z-50 glass-ultra border-b border-white/10"
+    >
+      <div className="container mx-auto px-4">
+        <div className="flex items-center justify-between h-16">
+          <div className="flex items-center space-x-8">
+            <Link to="/" className="flex items-center space-x-3">
+              <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-purple-600 rounded-lg flex items-center justify-center">
+                <SparklesIcon className="w-6 h-6 text-white" />
+              </div>
+              <span className="text-xl font-bold" style={{ color: '#ffffff' }}>
+                RNA Lab Navigator
+              </span>
+            </Link>
+            <div className="hidden lg:flex space-x-1">
+              <NavLink to="/" icon={MagnifyingGlassIcon}>Search</NavLink>
+              <NavLink to="/upload" icon={CloudArrowUpIcon}>Upload</NavLink>
+              <NavLink to="/gaps" icon={LightBulbIcon}>Gap Analysis</NavLink>
+              <NavLink to="/insights" icon={LinkIcon}>Cross-Paper</NavLink>
+              <NavLink to="/graph" icon={CubeTransparentIcon}>Knowledge Graph</NavLink>
+              <NavLink to="/experiments" icon={MapIcon}>Experiments</NavLink>
+              <NavLink to="/agents" icon={SparklesIcon}>AI Agents</NavLink>
+              <NavLink to="/protocol-designer" icon={BeakerIcon}>Protocols</NavLink>
+              <NavLink to="/analytics" icon={ChartBarIcon}>Analytics</NavLink>
+              <NavLink to="/security" icon={ShieldCheckIcon}>Security</NavLink>
             </div>
           </div>
+          <div className="flex items-center space-x-4">
+            <DarkModeToggle />
+            <div className="text-gray-400 text-sm hidden sm:block">
+              CSIR-IGIB
+            </div>
+            <button
+              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+              className="lg:hidden p-2 rounded-lg text-gray-400 hover:text-white hover:bg-white/10 transition-all"
+            >
+              {mobileMenuOpen ? <XMarkIcon className="w-6 h-6" /> : <Bars3Icon className="w-6 h-6" />}
+            </button>
+          </div>
+        </div>
         
-        <nav className="mt-4">
-          <ul className="flex justify-center space-x-6">
-            <li>
-              <Link to="/" className="text-primary-600 hover:text-primary-800 font-medium">
-                Home
-              </Link>
-            </li>
-            <li>
-              <Link to="/upload" className="text-primary-600 hover:text-primary-800 font-medium">
-                Upload Protocol
-              </Link>
-            </li>
-            <li>
-              <Link to="/analytics" className="text-primary-600 hover:text-primary-800 font-medium">
-                Feedback Analytics
-              </Link>
-            </li>
-            <li>
-              <Link to="/search-quality" className="text-primary-600 hover:text-primary-800 font-medium">
-                Search Quality
-              </Link>
-            </li>
-            <li>
-              <Link to="/security" className="text-primary-600 hover:text-primary-800 font-medium">
-                Security Audit
-              </Link>
-            </li>
-            <li>
-              <Link to="/demo" className="text-primary-600 hover:text-primary-800 font-medium">
-                Component Demo
-              </Link>
-            </li>
-          </ul>
-        </nav>
-        </motion.header>
+        {/* Mobile Menu */}
+        <AnimatePresence>
+          {mobileMenuOpen && (
+            <motion.div
+              initial={{ opacity: 0, height: 0 }}
+              animate={{ opacity: 1, height: 'auto' }}
+              exit={{ opacity: 0, height: 0 }}
+              transition={{ duration: 0.2 }}
+              className="lg:hidden border-t border-white/10"
+            >
+              <div className="px-4 py-2 space-y-1">
+                <MobileNavLink to="/" icon={MagnifyingGlassIcon} onClick={() => setMobileMenuOpen(false)}>Search</MobileNavLink>
+                <MobileNavLink to="/upload" icon={CloudArrowUpIcon} onClick={() => setMobileMenuOpen(false)}>Upload</MobileNavLink>
+                <MobileNavLink to="/gaps" icon={LightBulbIcon} onClick={() => setMobileMenuOpen(false)}>Gap Analysis</MobileNavLink>
+                <MobileNavLink to="/insights" icon={LinkIcon} onClick={() => setMobileMenuOpen(false)}>Cross-Paper</MobileNavLink>
+                <MobileNavLink to="/graph" icon={CubeTransparentIcon} onClick={() => setMobileMenuOpen(false)}>Knowledge Graph</MobileNavLink>
+                <MobileNavLink to="/experiments" icon={MapIcon} onClick={() => setMobileMenuOpen(false)}>Experiments</MobileNavLink>
+                <MobileNavLink to="/agents" icon={SparklesIcon} onClick={() => setMobileMenuOpen(false)}>AI Agents</MobileNavLink>
+                <MobileNavLink to="/protocol-designer" icon={BeakerIcon} onClick={() => setMobileMenuOpen(false)}>Protocols</MobileNavLink>
+                <MobileNavLink to="/analytics" icon={ChartBarIcon} onClick={() => setMobileMenuOpen(false)}>Analytics</MobileNavLink>
+                <MobileNavLink to="/security" icon={ShieldCheckIcon} onClick={() => setMobileMenuOpen(false)}>Security</MobileNavLink>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </div>
+    </motion.nav>
+  );
+}
 
-        <motion.main
+function NavLink({ to, icon: Icon, children }) {
+  return (
+    <Link 
+      to={to} 
+      className="flex items-center space-x-2 px-4 py-2 rounded-lg text-gray-300 hover:text-white hover:bg-white/10 transition-all duration-200"
+    >
+      <Icon className="w-4 h-4" />
+      <span className="text-sm font-medium">{children}</span>
+    </Link>
+  );
+}
+
+function MobileNavLink({ to, icon: Icon, children, onClick }) {
+  return (
+    <Link 
+      to={to} 
+      onClick={onClick}
+      className="flex items-center space-x-3 px-4 py-3 rounded-lg text-gray-300 hover:text-white hover:bg-white/10 transition-all duration-200 w-full"
+    >
+      <Icon className="w-5 h-5" />
+      <span className="font-medium">{children}</span>
+    </Link>
+  );
+}
+
+function MainSearch() {
+  const [docType, setDocType] = useState('all');
+  const [activeMode, setActiveMode] = useState('search');
+
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-gray-950 via-blue-950/20 to-purple-950/20 relative overflow-hidden">
+      {/* Animated Background Elements */}
+      <ParticleBackground type="dna" count={150} />
+      <FloatingOrbs />
+      
+      {/* Gradient Overlays */}
+      <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent pointer-events-none" />
+      <div className="absolute top-0 left-1/4 w-96 h-96 bg-blue-500/30 rounded-full blur-3xl animate-pulse" />
+      <div className="absolute bottom-0 right-1/4 w-96 h-96 bg-purple-500/30 rounded-full blur-3xl animate-pulse animation-delay-2000" />
+      <div className="absolute top-1/2 right-1/3 w-64 h-64 bg-cyan-500/20 rounded-full blur-3xl float-animation" />
+      <div className="absolute bottom-1/3 left-1/2 w-80 h-80 bg-pink-500/20 rounded-full blur-3xl float-animation animation-delay-3000" />
+      
+      <Navigation />
+      
+      <div className="container mx-auto px-4 py-8 max-w-7xl relative z-10 mt-16">
+        {/* Hero Section */}
+        <motion.div 
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6, delay: 0.2 }}
+          transition={{ duration: 0.8 }}
+          className="text-center mb-12 mt-8"
         >
-          {enhancedUI ? (
-            <>
-              <GlassCard className="p-6 mb-6">
-                <FilterChips selected={docType} onChange={setDocType} />
-              </GlassCard>
-              <EnhancedSearchInterface docType={docType} />
-            </>
-          ) : (
-            <>
-              <FilterChips selected={docType} onChange={setDocType} />
-              <AdvancedSearchBox docType={docType} />
-            </>
+          <h1 className="text-5xl md:text-7xl font-bold mb-6 tracking-tight hero-title">
+            Next-Generation Research Intelligence
+          </h1>
+          <motion.p 
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ duration: 1, delay: 0.3 }}
+            className="text-xl md:text-2xl text-gray-300 max-w-3xl mx-auto leading-relaxed"
+          >
+            Unlock the power of your lab's knowledge with 
+            <span className="text-cyan-400 font-semibold"> AI-driven insights</span> and 
+            <span className="text-purple-400 font-semibold"> breakthrough discoveries</span>
+          </motion.p>
+          
+          {/* Statistics */}
+          <motion.div 
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.8, delay: 0.5 }}
+            className="mt-8 flex justify-center gap-8 text-sm"
+          >
+            <div className="text-center">
+              <div className="text-3xl font-bold text-blue-400">28+</div>
+              <div className="text-gray-500">Documents</div>
+            </div>
+            <div className="text-center">
+              <div className="text-3xl font-bold text-purple-400">&lt;1s</div>
+              <div className="text-gray-500">Query Time</div>
+            </div>
+            <div className="text-center">
+              <div className="text-3xl font-bold text-cyan-400">95%</div>
+              <div className="text-gray-500">Accuracy</div>
+            </div>
+          </motion.div>
+        </motion.div>
+
+        {/* Mode Selection with Glass Effect */}
+        <motion.div 
+          initial={{ opacity: 0, scale: 0.9 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ duration: 0.6, delay: 0.2 }}
+          className="flex justify-center mb-8"
+        >
+          <GlassCard className="inline-flex p-1">
+            <ModeButton
+              active={activeMode === 'search'}
+              onClick={() => setActiveMode('search')}
+              icon={MagnifyingGlassIcon}
+              label="Search & Analyze"
+            />
+            <ModeButton
+              active={activeMode === 'hypothesis'}
+              onClick={() => setActiveMode('hypothesis')}
+              icon={BeakerIcon}
+              label="Hypothesis Mode"
+            />
+            <ModeButton
+              active={activeMode === 'protocol'}
+              onClick={() => setActiveMode('protocol')}
+              icon={DocumentTextIcon}
+              label="Protocol Builder"
+            />
+          </GlassCard>
+        </motion.div>
+
+        {/* Document Type Filter */}
+        {activeMode === 'search' && (
+          <motion.div 
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ duration: 0.4 }}
+            className="mb-6 flex justify-center"
+          >
+            <FilterChips 
+              selected={docType} 
+              onChange={setDocType} 
+            />
+          </motion.div>
+        )}
+
+        {/* Main Content with Animation */}
+        <motion.main
+          key={activeMode}
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          exit={{ opacity: 0, y: -20 }}
+          transition={{ duration: 0.4 }}
+        >
+          {activeMode === 'search' && (
+            <EnhancedSearchInterface 
+              docType={docType}
+              onDocTypeChange={setDocType}
+            />
+          )}
+          
+          {activeMode === 'hypothesis' && (
+            <HypothesisExplorer />
+          )}
+          
+          {activeMode === 'protocol' && (
+            <ProtocolBuilder />
           )}
         </motion.main>
-
-        <motion.footer 
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ duration: 0.6, delay: 0.4 }}
-          className={enhancedUI ? "mt-12 text-center text-white/60 text-sm" : "mt-12 text-center text-gray-500 text-sm"}
-        >
-          <p>© 2025 Dr. Debojyoti Chakraborty's RNA Biology Lab (CSIR-IGIB)</p>
-        </motion.footer>
       </div>
     </div>
   );
 }
 
-function UploadPage() {
+function ModeButton({ active, onClick, icon: Icon, label }) {
   return (
-    <div className="container mx-auto px-4 py-8 max-w-4xl">
-      <header className="mb-8 text-center">
-        <h1 className="text-3xl font-bold text-gray-800 mb-2">RNA Lab Navigator</h1>
-        <p className="text-gray-600">
-          Upload Protocol Documents
-        </p>
-        
-        <nav className="mt-4">
-          <ul className="flex justify-center space-x-6">
-            <li>
-              <Link to="/" className="text-primary-600 hover:text-primary-800 font-medium">
-                Home
-              </Link>
-            </li>
-            <li>
-              <Link to="/upload" className="text-gray-800 font-bold">
-                Upload Protocol
-              </Link>
-            </li>
-            <li>
-              <Link to="/analytics" className="text-primary-600 hover:text-primary-800 font-medium">
-                Feedback Analytics
-              </Link>
-            </li>
-            <li>
-              <Link to="/search-quality" className="text-primary-600 hover:text-primary-800 font-medium">
-                Search Quality
-              </Link>
-            </li>
-            <li>
-              <Link to="/security" className="text-primary-600 hover:text-primary-800 font-medium">
-                Security Audit
-              </Link>
-            </li>
-          </ul>
-        </nav>
-      </header>
-
-      <main>
-        <ProtocolUploader />
-      </main>
-
-      <footer className="mt-12 text-center text-gray-500 text-sm">
-        <p>© 2025 Dr. Debojyoti Chakraborty's RNA Biology Lab (CSIR-IGIB)</p>
-      </footer>
-    </div>
+    <motion.button
+      whileHover={{ scale: 1.02 }}
+      whileTap={{ scale: 0.98 }}
+      onClick={onClick}
+      className={`
+        relative flex items-center space-x-2 px-6 py-3 rounded-xl 
+        transition-all duration-300 overflow-hidden group
+        ${active 
+          ? 'bg-gradient-to-r from-blue-600 to-purple-600 text-white shadow-lg shadow-blue-500/25' 
+          : 'text-gray-400 hover:text-white hover:bg-white/10'
+        }
+      `}
+    >
+      {/* Hover effect */}
+      {!active && (
+        <div className="absolute inset-0 bg-gradient-to-r from-blue-600/20 to-purple-600/20 
+                        translate-y-full group-hover:translate-y-0 transition-transform duration-300" />
+      )}
+      
+      <Icon className={`w-5 h-5 relative z-10 ${active ? 'animate-pulse' : ''}`} />
+      <span className="font-medium relative z-10">{label}</span>
+      
+      {active && (
+        <motion.div
+          layoutId="activeModeIndicator"
+          className="absolute bottom-0 left-0 right-0 h-1 bg-white"
+        />
+      )}
+    </motion.button>
   );
 }
 
-function AnalyticsPage() {
+function PageWrapper({ children, title, subtitle, icon: Icon }) {
   return (
-    <div className="container mx-auto px-4 py-8 max-w-6xl">
-      <header className="mb-8 text-center">
-        <h1 className="text-3xl font-bold text-gray-800 mb-2">RNA Lab Navigator</h1>
-        <p className="text-gray-600">
-          Feedback Analytics Dashboard
-        </p>
+    <div className="min-h-screen bg-gradient-to-br from-gray-950 via-blue-950/20 to-purple-950/20 relative overflow-hidden">
+      <ParticleBackground type="dna" count={100} />
+      <FloatingOrbs />
+      
+      <Navigation />
+      
+      <div className="container mx-auto px-4 py-8 mt-16 relative z-10">
+        <motion.div 
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6 }}
+          className="mb-8 text-center"
+        >
+          <div className="flex justify-center mb-4">
+            <div className="w-20 h-20 bg-gradient-to-br from-blue-500 to-purple-600 rounded-2xl flex items-center justify-center shadow-lg shadow-blue-500/25">
+              {Icon && <Icon className="w-10 h-10 text-white" />}
+            </div>
+          </div>
+          <h2 className="text-4xl font-bold mb-2" style={{ color: '#ffffff' }}>
+            {title}
+          </h2>
+          {subtitle && (
+            <p className="text-gray-400 text-lg">{subtitle}</p>
+          )}
+        </motion.div>
         
-        <nav className="mt-4">
-          <ul className="flex justify-center space-x-6">
-            <li>
-              <Link to="/" className="text-primary-600 hover:text-primary-800 font-medium">
-                Home
-              </Link>
-            </li>
-            <li>
-              <Link to="/upload" className="text-primary-600 hover:text-primary-800 font-medium">
-                Upload Protocol
-              </Link>
-            </li>
-            <li>
-              <Link to="/analytics" className="text-gray-800 font-bold">
-                Feedback Analytics
-              </Link>
-            </li>
-            <li>
-              <Link to="/search-quality" className="text-primary-600 hover:text-primary-800 font-medium">
-                Search Quality
-              </Link>
-            </li>
-            <li>
-              <Link to="/security" className="text-primary-600 hover:text-primary-800 font-medium">
-                Security Audit
-              </Link>
-            </li>
-          </ul>
-        </nav>
-      </header>
-
-      <main>
-        <FeedbackAnalyticsDashboard />
-      </main>
-
-      <footer className="mt-12 text-center text-gray-500 text-sm">
-        <p>© 2025 Dr. Debojyoti Chakraborty's RNA Biology Lab (CSIR-IGIB)</p>
-      </footer>
-    </div>
-  );
-}
-
-function SearchQualityPage() {
-  return (
-    <div className="container mx-auto px-4 py-8 max-w-6xl">
-      <header className="mb-8 text-center">
-        <h1 className="text-3xl font-bold text-gray-800 mb-2">RNA Lab Navigator</h1>
-        <p className="text-gray-600">
-          Search Quality Dashboard
-        </p>
-        
-        <nav className="mt-4">
-          <ul className="flex justify-center space-x-6">
-            <li>
-              <Link to="/" className="text-primary-600 hover:text-primary-800 font-medium">
-                Home
-              </Link>
-            </li>
-            <li>
-              <Link to="/upload" className="text-primary-600 hover:text-primary-800 font-medium">
-                Upload Protocol
-              </Link>
-            </li>
-            <li>
-              <Link to="/analytics" className="text-primary-600 hover:text-primary-800 font-medium">
-                Feedback Analytics
-              </Link>
-            </li>
-            <li>
-              <Link to="/search-quality" className="text-gray-800 font-bold">
-                Search Quality
-              </Link>
-            </li>
-          </ul>
-        </nav>
-      </header>
-
-      <main>
-        <SearchQualityDashboard />
-      </main>
-
-      <footer className="mt-12 text-center text-gray-500 text-sm">
-        <p>© 2025 Dr. Debojyoti Chakraborty's RNA Biology Lab (CSIR-IGIB)</p>
-      </footer>
-    </div>
-  );
-}
-
-function SecurityAuditPage() {
-  return (
-    <div className="container mx-auto px-4 py-8 max-w-7xl">
-      <header className="mb-8 text-center">
-        <h1 className="text-3xl font-bold text-gray-800 mb-2">RNA Lab Navigator</h1>
-        <p className="text-gray-600">
-          Security Audit Dashboard
-        </p>
-        
-        <nav className="mt-4">
-          <ul className="flex justify-center space-x-6">
-            <li>
-              <Link to="/" className="text-primary-600 hover:text-primary-800 font-medium">
-                Home
-              </Link>
-            </li>
-            <li>
-              <Link to="/upload" className="text-primary-600 hover:text-primary-800 font-medium">
-                Upload Protocol
-              </Link>
-            </li>
-            <li>
-              <Link to="/analytics" className="text-primary-600 hover:text-primary-800 font-medium">
-                Feedback Analytics
-              </Link>
-            </li>
-            <li>
-              <Link to="/search-quality" className="text-primary-600 hover:text-primary-800 font-medium">
-                Search Quality
-              </Link>
-            </li>
-            <li>
-              <Link to="/security" className="text-gray-800 font-bold">
-                Security Audit
-              </Link>
-            </li>
-          </ul>
-        </nav>
-      </header>
-
-      <main>
-        <SecurityAuditDashboard />
-      </main>
-
-      <footer className="mt-12 text-center text-gray-500 text-sm">
-        <p>© 2025 Dr. Debojyoti Chakraborty's RNA Biology Lab (CSIR-IGIB)</p>
-      </footer>
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6, delay: 0.2 }}
+        >
+          {children}
+        </motion.div>
+      </div>
     </div>
   );
 }
 
 function App() {
   return (
-    <DarkModeProvider>
-      <AnimationProvider>
-        <Router>
-          <div className="min-h-screen bg-rna-platinum dark:bg-gray-900">
-          <Routes>
-            <Route path="/" element={<MainApp />} />
-            <Route path="/upload" element={<UploadPage />} />
-            <Route path="/analytics" element={<AnalyticsPage />} />
-            <Route path="/search-quality" element={<SearchQualityPage />} />
-            <Route path="/security" element={<SecurityAuditPage />} />
-            <Route path="/demo" element={<EnhancedComponentsDemo />} />
-            <Route path="/showcase" element={<ColossalShowcase />} />
+    <ErrorBoundary>
+      <NotificationProvider>
+        <DarkModeProvider>
+          <AnimationProvider>
+            <Router>
+            <Routes>
+            {/* Main search is the default route */}
+            <Route path="/" element={<MainSearch />} />
+            
+            {/* Simple search interface for demo */}
+            <Route path="/simple" element={<SimpleSearch />} />
+            
+            {/* Secondary features */}
+            <Route path="/upload" element={
+              <PageWrapper 
+                title="Upload Documents" 
+                subtitle="Add new research materials to your knowledge base"
+                icon={CloudArrowUpIcon}
+              >
+                <DocumentUploader />
+              </PageWrapper>
+            } />
+            
+            <Route path="/gaps" element={
+              <PageWrapper 
+                title="Knowledge Gap Explorer" 
+                subtitle="Discover research opportunities and unexplored areas"
+                icon={LightBulbIcon}
+              >
+                <GapExplorer />
+              </PageWrapper>
+            } />
+            
+            <Route path="/insights" element={
+              <PageWrapper 
+                title="Cross-Paper Insights" 
+                subtitle="Uncover connections and patterns across research papers"
+                icon={LinkIcon}
+              >
+                <CrossPaperInsights />
+              </PageWrapper>
+            } />
+            
+            <Route path="/graph" element={
+              <PageWrapper 
+                title="Knowledge Graph Explorer" 
+                subtitle="Visualize research connections in real-time"
+                icon={LinkIcon}
+              >
+                <KnowledgeGraphExplorer />
+              </PageWrapper>
+            } />
+            
+            <Route path="/experiments" element={
+              <PageWrapper 
+                title="Experiment Mapper" 
+                subtitle="Visualize and analyze experimental relationships"
+                icon={MapIcon}
+              >
+                <ExperimentMapper />
+              </PageWrapper>
+            } />
+            
+            <Route path="/agents" element={
+              <PageWrapper 
+                title="Multi-Agent Research Analysis" 
+                subtitle="AI research team analyzing papers for patterns and contradictions"
+                icon={SparklesIcon}
+              >
+                <MultiAgentAnalysis />
+              </PageWrapper>
+            } />
+            
+            <Route path="/protocol-designer" element={
+              <PageWrapper 
+                title="AI Protocol Designer" 
+                subtitle="Generate complete experimental protocols from hypotheses"
+                icon={BeakerIcon}
+              >
+                <ProtocolDesigner />
+              </PageWrapper>
+            } />
+            
+            <Route path="/analytics" element={
+              <PageWrapper 
+                title="Analytics Dashboard" 
+                subtitle="Track performance and user insights"
+                icon={ChartBarIcon}
+              >
+                <FeedbackAnalyticsDashboard />
+              </PageWrapper>
+            } />
+            
+            <Route path="/security" element={
+              <PageWrapper 
+                title="Security Audit" 
+                subtitle="Monitor and protect your research data"
+                icon={ShieldCheckIcon}
+              >
+                <SecurityAuditDashboard />
+              </PageWrapper>
+            } />
+            
+            <Route path="/search-quality" element={
+              <PageWrapper 
+                title="Search Quality" 
+                subtitle="Optimize search performance and accuracy"
+                icon={ChartBarIcon}
+              >
+                <SearchQualityDashboard />
+              </PageWrapper>
+            } />
+            
+            {/* Test route */}
+            <Route path="/test" element={<TestRoutes />} />
+            
+            {/* Redirect old routes */}
+            <Route path="/app" element={<Navigate to="/" replace />} />
+            <Route path="/showcase" element={<Navigate to="/" replace />} />
           </Routes>
           
-          {/* Global toast notifications */}
+          {/* Toast notifications with glass effect */}
           <Toaster
             position="top-right"
             toastOptions={{
               duration: 4000,
               style: {
-                background: '#ffffff',
-                color: '#1f2937',
-                border: '1px solid #e5e7eb',
+                background: 'rgba(17, 24, 39, 0.8)',
+                backdropFilter: 'blur(10px)',
+                color: '#ffffff',
+                border: '1px solid rgba(59, 130, 246, 0.3)',
                 borderRadius: '12px',
-                boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05)',
-              },
-              success: {
-                iconTheme: {
-                  primary: '#10b981',
-                  secondary: '#ffffff',
-                },
-              },
-              error: {
-                iconTheme: {
-                  primary: '#ef4444',
-                  secondary: '#ffffff',
-                },
+                boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)',
               },
             }}
           />
-          </div>
         </Router>
       </AnimationProvider>
     </DarkModeProvider>
+    </NotificationProvider>
+    </ErrorBoundary>
   );
 }
 
-export default MainApp;
+export default App;

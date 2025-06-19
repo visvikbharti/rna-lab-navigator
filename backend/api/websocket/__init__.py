@@ -1,0 +1,1 @@
+# WebSocket consumers and routing for real-time features

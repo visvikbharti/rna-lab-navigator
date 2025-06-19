@@ -2,10 +2,22 @@
 @import './styles/design-system.css';
 @import './styles/components.css';
 @import './styles/colossal-theme.css';
+@import './styles/colossal-design-tokens.css';
+@import './styles/colossal-components.css';
 
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+/* Override any wiggling animations on search results */
+.search-result-card {
+  transform: none !important;
+  transition: box-shadow 0.2s ease-in-out !important;
+}
+
+.search-result-card:hover {
+  transform: none !important;
+}
 
 /* Base styles for the RNA Lab Navigator */
 @layer base {
@@ -18,8 +30,8 @@
     font-family: var(--font-primary);
     line-height: var(--leading-normal);
     font-weight: var(--weight-normal);
-    color: var(--rna-charcoal);
-    background-color: var(--rna-platinum);
+    color: white;
+    background-color: var(--colossal-deep-space, #0A0E27);
     font-synthesis: none;
     text-rendering: optimizeLegibility;
     -webkit-font-smoothing: antialiased;
@@ -31,28 +43,28 @@
     font-size: var(--text-h1);
     line-height: var(--leading-tight);
     font-weight: var(--weight-semibold);
-    color: var(--rna-charcoal);
+    color: inherit;
   }
 
   h2 {
     font-size: var(--text-h2);
     line-height: var(--leading-tight);
     font-weight: var(--weight-semibold);
-    color: var(--rna-charcoal);
+    color: inherit;
   }
 
   h3 {
     font-size: var(--text-h3);
     line-height: var(--leading-normal);
     font-weight: var(--weight-semibold);
-    color: var(--rna-charcoal);
+    color: inherit;
   }
 
   h4 {
     font-size: var(--text-h4);
     line-height: var(--leading-normal);
     font-weight: var(--weight-medium);
-    color: var(--rna-charcoal);
+    color: inherit;
   }
 
   p {

@@ -45,6 +45,16 @@ const ColossalShowcase = () => {
         <span>Back to Lab</span>
       </Link>
       
+      {/* Demo Notice */}
+      <div className="fixed top-8 right-8 z-50 max-w-sm">
+        <div className="bg-bio-emerald/20 backdrop-blur-md border border-bio-emerald/30 rounded-lg p-3 text-white">
+          <div className="text-sm font-medium text-bio-emerald mb-1">✨ Visual Experience Demo</div>
+          <div className="text-xs text-bio-emerald/80">
+            Explore the future of RNA research interfaces. Real data analysis available on the main page.
+          </div>
+        </div>
+      </div>
+      
       {/* Dot Navigation */}
       <ScrollDotNavigation sections={sections} />
 
@@ -57,7 +67,7 @@ const ColossalShowcase = () => {
             transition={{ duration: 1, delay: 0.2 }}
           >
             <GradientText
-              text="DECODING RNA"
+              text="RNA LAB NAVIGATOR"
               className="text-7xl md:text-9xl font-bold mb-4"
               gradient="from-electric-blue via-plasma-cyan to-bio-emerald"
             />
@@ -69,7 +79,7 @@ const ColossalShowcase = () => {
             transition={{ duration: 1, delay: 0.5 }}
             className="text-2xl md:text-4xl text-white/80 mb-8"
           >
-            Intelligence Platform
+            Next-Generation Research Interface
           </motion.h2>
           
           <motion.div
