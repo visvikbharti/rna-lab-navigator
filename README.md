@@ -218,10 +218,6 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 - **Lab Website**: [RNA Biology Lab - CSIR-IGIB](https://www.igib.res.in)
 - **Project Lead**: Vishal Bharti
-- **Email**: vishalbharti@example.com
+- **Email**: vishalvikashbharti@gmail.com
 
 ---
-
-<p align="center">
-  Built with ❤️ for advancing RNA biology research
-</p>
