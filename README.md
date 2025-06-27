@@ -125,9 +125,10 @@ npm run dev
 ## 📚 Documentation
 
 - **[Developer Guide](docs/developer_facing_design_dossier.md)** - Detailed architecture and design decisions
-- **[API Documentation](docs/api_reference.md)** - REST API endpoints and usage
+- **[API Documentation](backend/api/README.md)** - REST API endpoints and usage
+- **[Backend README](backend/README.md)** - Backend setup and configuration
+- **[Frontend README](frontend/README.md)** - Frontend development guide
 - **[Deployment Guide](DEPLOYMENT_GUIDE.md)** - Production deployment instructions
-- **[Contributing Guide](CONTRIBUTING.md)** - How to contribute to the project
 
 ## 🧪 Usage Examples
 
@@ -140,22 +141,20 @@ POST /api/query/
 }
 ```
 
-### Enhanced RAG Query with Intelligence
+### Chat Query with Context
 ```python
-POST /api/query/enhanced/
+POST /api/chat/sessions/{session_id}/messages/
 {
-  "query": "How does ERBB4 signaling affect DNA damage response?",
-  "session_id": "unique-session-id"
+  "content": "How does ERBB4 signaling affect DNA damage response?"
 }
 ```
 
 Response includes:
 - Detailed answer with citations
-- Experiment suggestions
-- Critical questions to consider
-- Quick wins for immediate testing
-- Warnings about potential pitfalls
-- Novel research ideas
+- Intelligent follow-up suggestions
+- Confidence scores
+- Source documents
+- Processing metadata
 
 ## 🔧 Configuration
 
@@ -216,7 +215,25 @@ We welcome contributions! Please see our [Contributing Guide](CONTRIBUTING.md) f
 
 ## 📝 License
 
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+This is a private repository for CSIR-IGIB RNA Biology Lab. All rights reserved.
+
+## 📌 Current Implementation Status
+
+### ✅ Working Features
+- Chat interface with session management
+- Intelligent suggestions with confidence scores
+- Document search with hybrid retrieval (BM25 + vector)
+- Document ingestion for PDFs (papers, theses, protocols)
+- Conversation context with pronoun resolution
+- Response caching for performance
+- PII filtering and rate limiting
+
+### 🚧 Planned Features (Not Yet Implemented)
+- JWT authentication system
+- Knowledge graph visualization
+- Real-time WebSocket updates
+- Automated paper monitoring
+- Multi-agent analysis system
 
 ## 🙏 Acknowledgments
 
