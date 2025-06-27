@@ -13,6 +13,10 @@ from django.utils import timezone
 from .models import ChatSession, ChatMessage
 from .serializers import ChatSessionSerializer, ChatMessageSerializer
 from api.search.real_rag import perform_rag_query
+from api.rag.enhanced_rag import get_enhanced_rag_pipeline
+from api.rag.production_integration import get_production_rag_adapter
+from .enhanced_context import EnhancedContextBuilder
+import asyncio
 
 
 class ChatSessionView(APIView):
@@ -106,32 +110,128 @@ class ChatMessageView(APIView):
             content=content
         )
         
-        # Get conversation context (last 5 messages)
+        # Get conversation context (last 10 messages for better coherence)
         recent_messages = session.messages.filter(
             role__in=['user', 'assistant']
-        ).order_by('-created_at')[:5][::-1]
+        ).order_by('-created_at')[:10][::-1]
         
-        # Build context for RAG
-        context = self._build_context(recent_messages, content)
+        # Use enhanced context builder
+        context_builder = EnhancedContextBuilder(context_window=10)
+        enhanced_context = context_builder.build_enhanced_context(recent_messages, content)
+        
+        # Build context for RAG (keep backward compatibility)
+        context = {
+            'query': enhanced_context['query'],
+            'context': enhanced_context['context']
+        }
+        
+        # DEBUG: Log the enhanced context
+        print(f"\n[CHAT DEBUG] Original query: {content}")
+        print(f"[CHAT DEBUG] Enhanced query: {context['query']}")
+        print(f"[CHAT DEBUG] Has context: {bool(context['context'])}")
+        if enhanced_context.get('resolved_references'):
+            print(f"[CHAT DEBUG] Resolved references: {enhanced_context['resolved_references']}")
+        if enhanced_context.get('detected_topics'):
+            print(f"[CHAT DEBUG] Detected topics: {enhanced_context['detected_topics']}")
+        if enhanced_context.get('needs_clarification'):
+            print(f"[CHAT DEBUG] Query needs clarification!")
+        if enhanced_context.get('conversation_summary'):
+            print(f"[CHAT DEBUG] Conversation summary: {enhanced_context['conversation_summary'][:100]}...")
         
         try:
-            # Perform RAG query with context
-            rag_result = perform_rag_query(
-                context['query'],
-                doc_type=request.data.get('doc_type', 'all')
-            )
+            # Check if we should use production RAG (default: yes)
+            use_production = request.data.get('production', True)
+            use_enhanced = request.data.get('enhanced', False)  # Legacy enhanced RAG
+            
+            if use_production:
+                # Use production RAG pipeline
+                production_rag = get_production_rag_adapter()
+                
+                # Run async operation in sync context
+                loop = asyncio.new_event_loop()
+                asyncio.set_event_loop(loop)
+                try:
+                    rag_result = loop.run_until_complete(
+                        production_rag.process_query(
+                            context['query'],
+                            session_id=str(session.id),
+                            user_context={'session_history': context['context']}
+                        )
+                    )
+                finally:
+                    loop.close()
+                
+                # Production RAG returns standardized structure
+                final_answer = rag_result.get('answer', '')
+                metadata = {
+                    'sources': rag_result.get('sources', []),
+                    'confidence_score': rag_result.get('confidence', 0.5),
+                    'reasoning_trace': rag_result.get('reasoning_trace', []),
+                    'entities': rag_result.get('entities', []),
+                    'suggestions': rag_result.get('suggestions', []),
+                    'processing_time': rag_result.get('processing_time', 0),
+                    'search_results': rag_result.get('search_results', [])[:3],
+                    'enhanced': False,
+                    'production': True
+                }
+            elif use_enhanced:
+                # Legacy enhanced RAG pipeline
+                enhanced_rag = get_enhanced_rag_pipeline()
+                
+                # Run async operation in sync context
+                loop = asyncio.new_event_loop()
+                asyncio.set_event_loop(loop)
+                try:
+                    rag_result = loop.run_until_complete(
+                        enhanced_rag.process_query(
+                            context['query'],
+                            session_id=str(session.id),
+                            user_context={'session_history': context['context']}
+                        )
+                    )
+                finally:
+                    loop.close()
+                
+                # Enhanced RAG returns different structure
+                answer = rag_result.get('answer', '')
+                sources = rag_result.get('sources', [])
+                confidence = rag_result.get('confidence', 0.5)
+                
+                # Use the answer directly from enhanced RAG
+                final_answer = answer
+                metadata = {
+                    'sources': sources,
+                    'confidence_score': confidence,
+                    'reasoning_trace': rag_result.get('reasoning_trace', []),
+                    'entities': rag_result.get('entities', []),
+                    'suggestions': rag_result.get('suggestions', []),
+                    'processing_time': rag_result.get('processing_time', 0),
+                    'enhanced': True,
+                    'production': False
+                }
+            else:
+                # Fallback to basic RAG
+                rag_result = perform_rag_query(
+                    context['query'],
+                    doc_type=request.data.get('doc_type', 'all')
+                )
+                
+                final_answer = rag_result['answer']
+                metadata = {
+                    'sources': rag_result.get('sources', []),
+                    'confidence_score': rag_result.get('confidence_score', 0),
+                    'search_results': rag_result.get('search_results', [])[:3],  # Top 3
+                    'processing_time': rag_result.get('processing_time', 0),
+                    'enhanced': False,
+                    'production': False
+                }
             
             # Create assistant response
             assistant_message = ChatMessage.objects.create(
                 session=session,
                 role='assistant',
-                content=rag_result['answer'],
-                metadata={
-                    'sources': rag_result.get('sources', []),
-                    'confidence_score': rag_result.get('confidence_score', 0),
-                    'search_results': rag_result.get('search_results', [])[:3],  # Top 3
-                    'processing_time': rag_result.get('processing_time', 0)
-                }
+                content=final_answer,
+                metadata=metadata
             )
             
             # Update session

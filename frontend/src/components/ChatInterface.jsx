@@ -110,6 +110,11 @@ const ChatInterface = () => {
 
       const data = await response.json();
       
+      // Debug logging for suggestions
+      if (data.assistant_message?.metadata?.suggestions) {
+        console.log('Received suggestions:', data.assistant_message.metadata.suggestions);
+      }
+      
       // Update messages with server response
       setMessages(prev => [
         ...prev.filter(m => m.id !== userMessage.id),
@@ -183,6 +188,43 @@ const ChatInterface = () => {
             Confidence: {(metadata.confidence_score * 100).toFixed(0)}%
           </div>
         )}
+      </div>
+    );
+  };
+
+  const formatSuggestions = (metadata) => {
+    if (!metadata?.suggestions?.length) return null;
+    
+    return (
+      <div className="mt-4 pt-4 border-t border-gray-200 dark:border-gray-700">
+        <p className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-3 flex items-center gap-2">
+          <SparklesIcon className="w-4 h-4 text-blue-500" />
+          Suggested follow-up questions:
+        </p>
+        <div className="flex flex-wrap gap-2">
+          {metadata.suggestions.slice(0, 4).map((suggestion, idx) => (
+            <motion.button
+              key={idx}
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: idx * 0.1 }}
+              onClick={() => {
+                // Security: Sanitize the suggestion text before setting
+                const sanitizedText = suggestion.text.substring(0, 500);
+                setInputMessage(sanitizedText);
+                inputRef.current?.focus();
+              }}
+              className="px-4 py-2 text-sm bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 
+                         text-blue-700 dark:text-blue-300 rounded-lg hover:from-blue-100 hover:to-indigo-100 
+                         dark:hover:from-blue-900/30 dark:hover:to-indigo-900/30 transition-all duration-200
+                         border border-blue-200 dark:border-blue-700 shadow-sm hover:shadow-md
+                         transform hover:scale-105"
+              title={`Confidence: ${(suggestion.confidence * 100).toFixed(0)}%`}
+            >
+              {suggestion.text}
+            </motion.button>
+          ))}
+        </div>
       </div>
     );
   };
@@ -360,6 +402,7 @@ const ChatInterface = () => {
                             {message.content}
                           </ReactMarkdown>
                           {formatSources(message.metadata)}
+                          {formatSuggestions(message.metadata)}
                         </>
                       ) : (
                         <p className="whitespace-pre-wrap text-white">{message.content}</p>
@@ -408,16 +451,73 @@ const ChatInterface = () => {
 
         {/* Input Area */}
         <div className="bg-white dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700 px-6 py-4">
+          {/* Dynamic quick actions based on last assistant message */}
+          {!inputMessage && messages.length > 0 && (
+            <div className="max-w-3xl mx-auto mb-3">
+              {(() => {
+                const lastAssistantMessage = [...messages].reverse().find(m => m.role === 'assistant');
+                if (lastAssistantMessage?.metadata?.suggestions?.length > 0) {
+                  return (
+                    <div className="flex gap-2 flex-wrap">
+                      <p className="text-xs text-gray-500 dark:text-gray-400 w-full mb-1">Quick actions:</p>
+                      {lastAssistantMessage.metadata.suggestions.slice(0, 3).map((suggestion, idx) => (
+                        <button
+                          key={idx}
+                          onClick={() => setInputMessage(suggestion.text)}
+                          className="px-3 py-1 text-xs bg-gradient-to-r from-gray-100 to-gray-50 dark:from-gray-700 dark:to-gray-800 
+                                   text-gray-700 dark:text-gray-300 rounded-full hover:from-gray-200 hover:to-gray-100 
+                                   dark:hover:from-gray-600 dark:hover:to-gray-700 transition-all duration-200 
+                                   border border-gray-300 dark:border-gray-600"
+                        >
+                          {suggestion.text}
+                        </button>
+                      ))}
+                    </div>
+                  );
+                }
+                // Fallback to default quick actions
+                return (
+                  <div className="flex gap-2 flex-wrap">
+                    <button
+                      onClick={() => setInputMessage('Summarize the key findings')}
+                      className="px-3 py-1 text-xs bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-full hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors"
+                    >
+                      📊 Summarize findings
+                    </button>
+                    <button
+                      onClick={() => setInputMessage('What experiments can I do next?')}
+                  className="px-3 py-1 text-xs bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-full hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors"
+                >
+                  🧪 Suggest experiments
+                </button>
+                <button
+                  onClick={() => setInputMessage('Find related research')}
+                  className="px-3 py-1 text-xs bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-full hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors"
+                >
+                  🔍 Find related work
+                </button>
+                  </div>
+                );
+              })()}
+            </div>
+          )}
           <form onSubmit={(e) => { e.preventDefault(); sendMessage(); }} className="max-w-3xl mx-auto">
             <div className="relative">
-              <input
+              <textarea
                 ref={inputRef}
-                type="text"
                 value={inputMessage}
                 onChange={(e) => setInputMessage(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' && !e.shiftKey) {
+                    e.preventDefault();
+                    sendMessage();
+                  }
+                }}
                 placeholder="Ask about research papers, protocols, or theses..."
-                className="w-full px-4 py-3 pr-12 bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-white rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full px-4 py-3 pr-12 bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-white rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
                 disabled={isLoading || !currentSessionId}
+                rows={1}
+                style={{ minHeight: '48px', maxHeight: '120px' }}
               />
               <button
                 type="submit"
@@ -435,6 +535,13 @@ const ChatInterface = () => {
               Press Enter to send • Shift+Enter for new line
             </p>
           </form>
+          
+          {/* Disclaimer */}
+          <div className="max-w-3xl mx-auto mt-2 text-center">
+            <p className="text-xs text-gray-500 dark:text-gray-400">
+              RNA Lab Navigator can make mistakes. Verify important information with original sources.
+            </p>
+          </div>
         </div>
       </div>
     </div>

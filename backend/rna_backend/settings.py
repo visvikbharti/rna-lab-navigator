@@ -546,3 +546,21 @@ LOGGING = {
 
 # Create logs directory if it doesn't exist
 os.makedirs(os.path.join(BASE_DIR, 'logs'), exist_ok=True)
+
+# Production RAG Settings
+# ======================
+USE_PRODUCTION_RAG = True  # Enable production-grade RAG pipeline
+PRODUCTION_RAG_CACHE_TTL = 3600  # 1 hour cache for RAG results
+PRODUCTION_RAG_MAX_CONTEXT = 3000  # Maximum context length in tokens
+PRODUCTION_RAG_RERANK_TOP_K = 20  # Number of results to rerank
+PRODUCTION_RAG_FINAL_TOP_K = 5  # Final number of results after reranking
+PRODUCTION_RAG_MIN_RELEVANCE = 0.7  # Minimum relevance score threshold
+# Production RAG Configuration
+USE_PRODUCTION_RAG = True  # Enable production RAG
+USE_OPTIMIZED_RAG = True  # Enable optimized <5s RAG
+PRODUCTION_RAG_CACHE_TTL = 3600  # 1 hour cache
+PRODUCTION_RAG_MAX_CONTEXT = 3000  # Max context tokens
+PRODUCTION_RAG_RERANK_TOP_K = 20  # Results to rerank
+PRODUCTION_RAG_FINAL_TOP_K = 5  # Final results
+PRODUCTION_RAG_MIN_RELEVANCE = 0.7  # Min relevance score
+

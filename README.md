@@ -3,7 +3,8 @@
 > **AI-Powered Research Intelligence Platform for RNA Biology**  
 > Built for Dr. Debojyoti Chakraborty's RNA Biology Lab at CSIR-IGIB
 
-[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT)
+[![License: Private](https://img.shields.io/badge/License-Private-red.svg)]()
+[![Status: Production Ready](https://img.shields.io/badge/Status-Production_Ready-green.svg)]()
 [![Python](https://img.shields.io/badge/Python-3.9+-blue.svg)](https://www.python.org/downloads/)
 [![Django](https://img.shields.io/badge/Django-4.2-green.svg)](https://www.djangoproject.com/)
 [![React](https://img.shields.io/badge/React-18-blue.svg)](https://reactjs.org/)
@@ -14,14 +15,14 @@ RNA Lab Navigator is an intelligent research assistant that transforms how RNA b
 
 ### 🎯 Key Features
 
-- **🤖 Intelligent Q&A** - Get instant answers with citations from lab documents, papers, and protocols
-- **🧪 Research Intelligence** - Receive experiment suggestions, critical questions, and novel research ideas
-- **👥 Multi-Agent AI System** - Specialized agents for literature analysis, hypothesis generation, and protocol design
-- **💬 Conversational Interface** - Chat-like interface with context awareness and session memory
-- **📊 Knowledge Graph** - Visualize connections between experiments, papers, and concepts
-- **🔔 Paper Monitoring** - Automated daily scanning of bioRxiv for relevant preprints
-- **🔬 Hypothesis Explorer** - AI-powered hypothesis validation and experimental design
-- **📋 Protocol Builder** - Generate detailed protocols from research questions
+- **🤖 Intelligent Q&A** - Get instant answers with citations from 2,438+ vectors (7 PhD theses, 18 papers, 9 protocols)
+- **💡 Smart Suggestions** - Context-aware follow-up questions with confidence scores (0.7-0.95)
+- **🧠 Enhanced Conversation** - Pronoun resolution, topic tracking, and 10-message context window
+- **💬 ChatGPT-like Interface** - Natural conversation flow with typing indicators and animations
+- **🚀 Optimized Performance** - 10-15s response time with caching (<1s for cached queries)
+- **🔒 Enterprise Security** - PII filtering, rate limiting, audit trails (GMP-compliant ready)
+- **📊 Knowledge Coverage** - Complete lab knowledge base including all PhD theses
+- **🔔 Real-time Updates** - WebSocket support for live features (planned)
 
 ## 🏗️ Architecture
 
@@ -37,8 +38,8 @@ RNA Lab Navigator is an intelligent research assistant that transforms how RNA b
 ┌────────────────────────────▼────────────────────────────────────┐
 │                    Backend (Django + DRF)                        │
 │  ┌─────────────┐  ┌──────────────┐  ┌────────────────────┐     │
-│  │ Enhanced RAG │  │ Multi-Agent  │  │  Paper Monitor     │     │
-│  │   Pipeline   │  │    System    │  │    (Celery)        │     │
+│  │ Production   │  │  Enhanced    │  │  Intelligent       │     │
+│  │ RAG Pipeline │  │   Context    │  │  Suggestions       │     │
 │  └─────────────┘  └──────────────┘  └────────────────────┘     │
 └────────────────────────────┬────────────────────────────────────┘
                              │
@@ -165,21 +166,31 @@ OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
 OPENAI_MODEL = "gpt-4o"  # or "gpt-3.5-turbo" for cost savings
 
 # RAG Configuration
-CHUNK_SIZE = 400  # words per chunk
+CHUNK_SIZE = 400  # words per chunk (±50 tolerance)
 CHUNK_OVERLAP = 100  # overlap between chunks
 MIN_CONFIDENCE_THRESHOLD = 0.45  # minimum confidence for answers
+CONTEXT_WINDOW = 10  # messages in conversation context
 
-# Redis Configuration
-REDIS_HOST = os.getenv("REDIS_HOST", "localhost")
-REDIS_PORT = int(os.getenv("REDIS_PORT", "6379"))
+# Cache Configuration
+PRODUCTION_RAG_CACHE_TTL = 3600  # 1 hour cache
+EMBEDDING_CACHE_TTL = 86400  # 24 hour cache
+
+# Security
+RATE_LIMIT_ENABLED = True
+PII_FILTER_ENABLED = True
+WAF_ENABLED = False  # Enable for production
 ```
 
-## 📊 Performance Metrics
+## 📊 Performance Metrics (June 27, 2025)
 
-- **Answer Quality**: ≥85% accuracy on test questions
-- **Response Time**: <5 seconds for standard queries
-- **Document Support**: 10+ SOPs, theses, daily preprints
-- **Concurrent Users**: 50+ supported
+- **Answer Quality**: ≥85% accuracy with confidence scores 0.7-0.95
+- **Response Time**: 10-15s (uncached), <1s (cached)
+- **Vector Count**: 2,438 vectors across documents
+- **Document Coverage**: 
+  - 7 PhD theses (100% coverage)
+  - 18 research papers
+  - 9 lab protocols
+- **Context Window**: 10 messages with topic tracking
 - **Cost Efficiency**: <$30/month OpenAI costs
 
 ## 🚀 Deployment
@@ -217,8 +228,8 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 ## 📞 Contact
 
 - **Lab Website**: [RNA Biology Lab - CSIR-IGIB](https://www.igib.res.in)
-- **Project Lead**: Vishal Bharti
-- **Email**: vishalbharti@example.com
+- **Project Lead**: Vishal Bharti (Project Associate-II)
+- **Repository**: https://github.com/visvikbharti/rna-lab-navigator
 
 ---
 

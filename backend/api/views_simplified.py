@@ -148,7 +148,30 @@ class QueryView(APIView):
                 # Not in cache, continue with query processing
                 pass
         
-        # Try enhanced RAG first if available and requested
+        # Try Weaviate RAG first
+        try:
+            from api.rag.weaviate_production_rag import WeaviateProductionRAG
+            weaviate_rag = WeaviateProductionRAG()
+            rag_result = weaviate_rag.query(query_text, use_cache=use_cache)
+            
+            # Return Weaviate result
+            return Response({
+                'query': query_text,
+                'answer': rag_result['answer'],
+                'sources': rag_result['sources'],
+                'search_results': rag_result['search_results'],
+                'confidence_score': rag_result['confidence_score'],
+                'session_id': session_id,
+                'is_enhanced': False,
+                'is_weaviate': True,
+                'from_cache': False,
+                'processing_time': rag_result['processing_time'],
+                'query_id': None
+            })
+        except Exception as e:
+            print(f"Weaviate RAG error: {e}")
+            
+        # Try enhanced RAG if available and requested
         if use_enhanced:
             try:
                 from .rag.enhanced_rag import get_enhanced_rag_pipeline
@@ -228,22 +251,32 @@ class QueryView(APIView):
         # Build prompt and generate answer
         prompt = self.build_prompt(query_text, reranked_results)
         
-        # Use real RAG pipeline
-        from api.search.real_rag import perform_rag_query
+        # Use Weaviate RAG pipeline
+        from api.rag.weaviate_production_rag import WeaviateProductionRAG
         
         try:
-            rag_result = perform_rag_query(query_text, doc_type)
+            weaviate_rag = WeaviateProductionRAG()
+            rag_result = weaviate_rag.query(query_text, use_cache=use_cache)
             answer = rag_result['answer']
             sources = rag_result['sources']
             search_results = rag_result['search_results']  # Include search results with snippets
             confidence_score = rag_result['confidence_score']
         except Exception as e:
-            print(f"RAG pipeline error: {e}")
-            # Mock LLM response as fallback
-            answer = f"I apologize, but I'm having trouble accessing the document database. Please try again later."
-            sources = self.extract_sources(reranked_results)
-            search_results = []  # Empty search results for fallback
-            confidence_score = 0.1
+            print(f"Weaviate RAG pipeline error: {e}")
+            # Try fallback to original RAG
+            try:
+                from api.search.real_rag import perform_rag_query
+                rag_result = perform_rag_query(query_text, doc_type)
+                answer = rag_result['answer']
+                sources = rag_result['sources']
+                search_results = rag_result['search_results']
+                confidence_score = rag_result['confidence_score']
+            except Exception as e2:
+                print(f"Fallback RAG error: {e2}")
+                answer = f"I apologize, but I'm having trouble accessing the document database. Please try again later."
+                sources = self.extract_sources(reranked_results)
+                search_results = []
+                confidence_score = 0.1
         
         # Sources and confidence already set by RAG pipeline or fallback
         

@@ -41,7 +41,10 @@ class RAGAdapter:
     def process_query(self, query):
         """Process query using perform_rag_query"""
         from api.search.real_rag import perform_rag_query
-        return perform_rag_query(query)
+        print(f"\n[RAG ADAPTER DEBUG] Processing query: {query}")
+        result = perform_rag_query(query)
+        print(f"[RAG ADAPTER DEBUG] Got {len(result.get('search_results', []))} search results")
+        return result
     
     def _query_llm(self, prompt, context="", temperature=0.7):
         """Direct OpenAI query"""

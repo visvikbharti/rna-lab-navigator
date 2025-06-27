@@ -58,24 +58,11 @@ def get_vector_db_client():
         from django.conf import settings
         import os
         
-        auth_config = None
-        if settings.WEAVIATE_API_KEY:
-            auth_config = weaviate.auth.AuthApiKey(api_key=settings.WEAVIATE_API_KEY)
-        
-        # Use v4 client connection
-        import weaviate.connect as weaviate_connect
-        if settings.WEAVIATE_API_KEY:
-            auth_config = weaviate.auth.ApiKey(settings.WEAVIATE_API_KEY)
-            client = weaviate.connect_to_local(
-                host="localhost",
-                port=8080,
-                auth_credentials=auth_config
-            )
-        else:
-            client = weaviate.connect_to_local(
-                host="localhost", 
-                port=8080
-            )
+        # Use v3 client connection (compatible with weaviate-client 3.25.2)
+        # For local development, we don't need authentication
+        client = weaviate.Client(
+            url="http://localhost:8080"
+        )
         
         # Configure mTLS if enabled
         if settings.WEAVIATE_TLS_ENABLED:
@@ -114,7 +101,7 @@ def get_vector_db_client():
                 ca_cert_path=ca_path,
             )
             
-        return weaviate.Client(client_config)
+        return client
 
 def get_cross_encoder():
     """

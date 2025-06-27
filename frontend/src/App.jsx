@@ -26,6 +26,7 @@ import { MagnifyingGlassIcon, BeakerIcon, DocumentTextIcon, ChartBarIcon, Shield
 import MultiAgentAnalysis from './components/MultiAgentAnalysis';
 import ProtocolDesigner from './components/ProtocolDesigner';
 import TestRoutes from './TestRoutes';
+import ChatInterface from './components/ChatInterface';
 // Use clean, working CSS
 import './styles/app-clean.css';
 
@@ -349,8 +350,11 @@ function App() {
           <AnimationProvider>
             <Router>
             <Routes>
-            {/* Main search is the default route */}
-            <Route path="/" element={<MainSearch />} />
+            {/* Chat interface is the default route */}
+            <Route path="/" element={<ChatInterface />} />
+            
+            {/* Old search interface */}
+            <Route path="/old-search" element={<MainSearch />} />
             
             {/* Simple search interface for demo */}
             <Route path="/simple" element={<SimpleSearch />} />

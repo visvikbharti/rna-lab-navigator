@@ -89,11 +89,13 @@ class SimpleVectorStore:
                 
                 # Check for author name matches (high priority)
                 author_name = self.metadata[idx].get('author', '').lower()
+                all_authors = self.metadata[idx].get('all_authors', '').lower()
                 title = self.metadata[idx].get('title', '').lower()
                 
                 # Strong boost for author name matches
                 for term in query_terms:
-                    if term in author_name:
+                    # Check both single author and all authors fields
+                    if term in author_name or term in all_authors:
                         score += 2.0  # MASSIVE boost for author match
                         exact_matches += 5  # Count as multiple matches
                     if term in title:
@@ -607,7 +609,8 @@ def perform_rag_query(query, doc_type="all"):
     
     # Initialize if needed
     if len(vector_store.vectors) == 0:
-        initialize_vectorstore_with_sample_data()
+        # DISABLED: initialize_vectorstore_with_sample_data()  # Use Weaviate instead
+        pass  # Use Weaviate vectors loaded externally
     
     # Search for relevant documents
     search_results = search_documents(query, doc_type)

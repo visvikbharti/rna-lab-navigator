@@ -87,8 +87,7 @@ def create_schema_if_not_exists():
             "vectorizer": "text2vec-openai",  # Use OpenAI's embeddings
             "moduleConfig": {
                 "text2vec-openai": {
-                    "model": "ada-002",
-                    "modelVersion": "002",
+                    "model": "text-embedding-3-small",
                     "type": "text"
                 }
             },
@@ -180,8 +179,7 @@ def create_schema_if_not_exists():
             "vectorizer": "text2vec-openai",
             "moduleConfig": {
                 "text2vec-openai": {
-                    "model": "ada-002",
-                    "modelVersion": "002",
+                    "model": "text-embedding-3-small",
                     "type": "text"
                 }
             },
