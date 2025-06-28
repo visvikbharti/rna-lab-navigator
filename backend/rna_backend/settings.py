@@ -65,6 +65,9 @@ INSTALLED_APPS = [
     "api.search.apps.SearchConfig",  # Search subapp
 ]
 
+# Custom user model
+AUTH_USER_MODEL = 'api_auth.User'
+
 # Authentication backends
 AUTHENTICATION_BACKENDS = [
     # AxesStandaloneBackend should be the first backend in the AUTHENTICATION_BACKENDS list

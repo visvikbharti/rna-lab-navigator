@@ -58,29 +58,29 @@ urlpatterns = [
     # Enhanced search endpoints (simplified for demo)
     path("search/", include("api.search.urls_simplified")),
     
-    # Hypothesis mode endpoints
-    path("hypothesis/", include("api.hypothesis.urls")),
+    # # Hypothesis mode endpoints (TODO: implement)
+    # path("hypothesis/", include("api.hypothesis.urls")),
     
-    # Experiment mapping endpoints
-    path("experiments/", include("api.experiments.urls")),
+    # # Experiment mapping endpoints (TODO: implement)
+    # path("experiments/", include("api.experiments.urls")),
     
     # Document ingestion endpoints
     path("ingestion/", include("api.ingestion.urls")),
     
-    # Intelligence endpoints
-    path("intelligence/", include("api.intelligence.urls")),
+    # # Intelligence endpoints (TODO: implement)
+    # path("intelligence/", include("api.intelligence.urls")),
     
-    # Knowledge graph endpoints
-    path("knowledge-graph/", include("api.knowledge_graph.urls")),
+    # # Knowledge graph endpoints (TODO: implement)
+    # path("knowledge-graph/", include("api.knowledge_graph.urls")),
     
     # Chat endpoints
     path("chat/", include("api.chat.urls")),
     
-    # Paper monitoring endpoints
-    path("papers/", include("api.papers.urls")),
+    # # Paper monitoring endpoints (TODO: implement)
+    # path("papers/", include("api.papers.urls")),
     
-    # Multi-agent research system endpoints
-    path("agents/", include("api.agents.urls")),
+    # # Multi-agent research system endpoints (TODO: implement)
+    # path("agents/", include("api.agents.urls")),
     
     # Router URLs
     path("", include(router.urls)),

@@ -4,7 +4,7 @@ Models for enhanced search functionality.
 
 from django.db import models
 from django.utils import timezone
-from django.contrib.auth.models import User
+from django.conf import settings
 import uuid
 
 from ..models import QueryHistory
@@ -168,7 +168,7 @@ class SearchRankingProfile(models.Model):
     # Status and usage
     is_default = models.BooleanField(default=False,
                                    help_text="Whether this is the default profile")
-    created_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True)
+    created_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True)
     created_at = models.DateTimeField(default=timezone.now)
     updated_at = models.DateTimeField(auto_now=True)
     usage_count = models.PositiveIntegerField(default=0,
@@ -222,7 +222,7 @@ class SearchFilter(models.Model):
     # Metadata
     is_system = models.BooleanField(default=False,
                                   help_text="Whether this is a system-defined filter")
-    created_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True)
+    created_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True)
     created_at = models.DateTimeField(default=timezone.now)
     updated_at = models.DateTimeField(auto_now=True)
     
@@ -287,7 +287,7 @@ class SavedSearch(models.Model):
     description = models.TextField(blank=True)
     
     # The user who created this saved search
-    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='saved_searches')
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='saved_searches')
     
     # Search configuration
     query_text = models.TextField(blank=True)
@@ -323,7 +323,7 @@ class SearchAnalytics(models.Model):
     """
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     query_text = models.TextField()
-    user = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True)
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True)
     session_id = models.CharField(max_length=100, blank=True,
                                 help_text="Session identifier for anonymous users")
     timestamp = models.DateTimeField(default=timezone.now)

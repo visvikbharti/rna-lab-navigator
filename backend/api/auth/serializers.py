@@ -1,162 +1,149 @@
 """
-Authentication serializers for the RNA Lab Navigator.
-Provides serializers for user registration, profile management, and password management.
+Serializers for authentication with GMP compliance.
 """
 
-import re
-from django.contrib.auth.models import User
-from django.contrib.auth.password_validation import validate_password
-from django.utils.http import urlsafe_base64_decode
-from django.utils.encoding import force_str
-
 from rest_framework import serializers
-from rest_framework.validators import UniqueValidator
+from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
+from django.contrib.auth.password_validation import validate_password
+from django.core.exceptions import ValidationError
+
+from .models import User, AuditLog, UserRole
 
 
-class UserRegistrationSerializer(serializers.ModelSerializer):
-    """
-    Serializer for user registration.
-    """
-    email = serializers.EmailField(
-        required=True,
-        validators=[UniqueValidator(queryset=User.objects.all())]
-    )
+class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
+    """Custom token serializer with additional user data."""
     
-    password = serializers.CharField(
-        write_only=True,
-        required=True,
-        validators=[validate_password]
-    )
+    @classmethod
+    def get_token(cls, user):
+        token = super().get_token(user)
+        
+        # Add custom claims
+        token['username'] = user.username
+        token['email'] = user.email
+        token['role'] = user.role
+        token['employee_id'] = user.employee_id
+        token['department'] = user.department
+        
+        return token
     
-    password_confirm = serializers.CharField(write_only=True, required=True)
+    def validate(self, attrs):
+        data = super().validate(attrs)
+        
+        # Add extra responses here
+        data.update({
+            'user': {
+                'id': self.user.id,
+                'username': self.user.username,
+                'email': self.user.email,
+                'first_name': self.user.first_name,
+                'last_name': self.user.last_name,
+                'role': self.user.role,
+                'department': self.user.department,
+                'employee_id': self.user.employee_id,
+                'is_locked': self.user.is_locked,
+                'terms_accepted': bool(self.user.terms_accepted_at),
+                'data_access_agreement_signed': self.user.data_access_agreement_signed,
+            }
+        })
+        
+        return data
+
+
+class UserSerializer(serializers.ModelSerializer):
+    """Serializer for User model."""
+    full_name = serializers.CharField(source='get_full_name', read_only=True)
+    is_locked = serializers.BooleanField(read_only=True)
     
     class Meta:
         model = User
-        fields = ('username', 'email', 'first_name', 'last_name', 'password', 'password_confirm')
-        extra_kwargs = {
-            'first_name': {'required': True},
-            'last_name': {'required': True}
-        }
+        fields = [
+            'id', 'username', 'email', 'first_name', 'last_name', 'full_name',
+            'employee_id', 'department', 'phone', 'designation', 'role',
+            'is_active', 'is_locked', 'terms_accepted_at', 
+            'data_access_agreement_signed', 'last_activity', 'date_joined',
+            'total_queries', 'total_documents_uploaded', 'notification_preferences'
+        ]
+        read_only_fields = [
+            'id', 'username', 'is_locked', 'last_activity', 'date_joined',
+            'total_queries', 'total_documents_uploaded'
+        ]
+
+
+class UserRegistrationSerializer(serializers.ModelSerializer):
+    """Serializer for user registration."""
+    password = serializers.CharField(write_only=True, required=True, style={'input_type': 'password'})
+    password_confirm = serializers.CharField(write_only=True, required=True, style={'input_type': 'password'})
     
-    def validate(self, data):
-        """
-        Validate that the passwords match.
-        """
-        if data['password'] != data['password_confirm']:
-            raise serializers.ValidationError({"password_confirm": "Passwords don't match"})
-        return data
+    class Meta:
+        model = User
+        fields = [
+            'username', 'email', 'password', 'password_confirm',
+            'first_name', 'last_name', 'employee_id', 'department',
+            'phone', 'designation', 'role'
+        ]
+        
+    def validate_employee_id(self, value):
+        """Validate employee ID is unique."""
+        if User.objects.filter(employee_id=value).exists():
+            raise serializers.ValidationError("Employee ID already exists.")
+        return value
+    
+    def validate(self, attrs):
+        """Validate passwords match."""
+        if attrs['password'] != attrs['password_confirm']:
+            raise serializers.ValidationError({"password": "Password fields didn't match."})
+        
+        # Validate password strength
+        try:
+            validate_password(attrs['password'])
+        except ValidationError as e:
+            raise serializers.ValidationError({"password": e.messages})
+        
+        return attrs
     
     def create(self, validated_data):
-        """
-        Create and return a new user instance.
-        """
-        # Remove password_confirm from validated data
+        """Create user with validated data."""
         validated_data.pop('password_confirm')
+        password = validated_data.pop('password')
         
-        # Create user with encrypted password
-        user = User.objects.create(
-            username=validated_data['username'],
-            email=validated_data['email'],
-            first_name=validated_data['first_name'],
-            last_name=validated_data['last_name']
-        )
-        
-        user.set_password(validated_data['password'])
+        # Create user
+        user = User(**validated_data)
+        user.set_password(password)
         user.save()
         
         return user
 
 
-class UserProfileSerializer(serializers.ModelSerializer):
-    """
-    Serializer for user profile management.
-    """
-    email = serializers.EmailField(
-        validators=[UniqueValidator(queryset=User.objects.all())],
-        required=False
-    )
+class PasswordChangeSerializer(serializers.Serializer):
+    """Serializer for password change."""
+    old_password = serializers.CharField(required=True, style={'input_type': 'password'})
+    new_password = serializers.CharField(required=True, style={'input_type': 'password'})
+    new_password_confirm = serializers.CharField(required=True, style={'input_type': 'password'})
     
-    roles = serializers.SerializerMethodField()
-    permissions = serializers.SerializerMethodField()
+    def validate(self, attrs):
+        """Validate new passwords match."""
+        if attrs['new_password'] != attrs['new_password_confirm']:
+            raise serializers.ValidationError({"new_password": "New password fields didn't match."})
+        
+        # Validate password strength
+        try:
+            validate_password(attrs['new_password'])
+        except ValidationError as e:
+            raise serializers.ValidationError({"new_password": e.messages})
+        
+        return attrs
+
+
+class AuditLogSerializer(serializers.ModelSerializer):
+    """Serializer for audit logs."""
+    username = serializers.CharField(read_only=True)
+    action_display = serializers.CharField(source='get_action_display', read_only=True)
     
     class Meta:
-        model = User
-        fields = ('id', 'username', 'email', 'first_name', 'last_name', 
-                 'date_joined', 'last_login', 'roles', 'permissions')
-        read_only_fields = ('id', 'username', 'date_joined', 'last_login', 
-                           'roles', 'permissions')
-    
-    def get_roles(self, obj):
-        from .models import UserRole
-        roles = UserRole.objects.filter(user=obj)
-        return [{'role': role.role, 'name': role.get_role_display()} for role in roles]
-    
-    def get_permissions(self, obj):
-        from .models import UserPermission
-        permissions = UserPermission.objects.filter(user=obj)
-        return [{'permission': perm.permission, 'name': perm.get_permission_display()} 
-                for perm in permissions]
-
-
-class ChangePasswordSerializer(serializers.Serializer):
-    """
-    Serializer for changing password.
-    """
-    current_password = serializers.CharField(required=True)
-    new_password = serializers.CharField(required=True, validators=[validate_password])
-    new_password_confirm = serializers.CharField(required=True)
-    
-    def validate_current_password(self, value):
-        """
-        Validate that the current password is correct.
-        """
-        user = self.context.get('user')
-        if not user.check_password(value):
-            raise serializers.ValidationError("Current password is incorrect.")
-        return value
-    
-    def validate(self, data):
-        """
-        Validate that the new passwords match.
-        """
-        if data['new_password'] != data['new_password_confirm']:
-            raise serializers.ValidationError({"new_password_confirm": "New passwords don't match."})
-        
-        # Check that new password is not the same as the current password
-        if data['current_password'] == data['new_password']:
-            raise serializers.ValidationError({"new_password": "New password must be different from current password."})
-        
-        return data
-
-
-class PasswordResetRequestSerializer(serializers.Serializer):
-    """
-    Serializer for requesting a password reset.
-    """
-    email = serializers.EmailField(required=True)
-
-
-class PasswordResetConfirmSerializer(serializers.Serializer):
-    """
-    Serializer for confirming a password reset.
-    """
-    uid = serializers.CharField(required=True)
-    token = serializers.CharField(required=True)
-    new_password = serializers.CharField(required=True, validators=[validate_password])
-    new_password_confirm = serializers.CharField(required=True)
-    
-    def validate(self, data):
-        """
-        Validate that the new passwords match.
-        """
-        if data['new_password'] != data['new_password_confirm']:
-            raise serializers.ValidationError({"new_password_confirm": "New passwords don't match."})
-        
-        # Validate UID is valid base64
-        try:
-            user_id = force_str(urlsafe_base64_decode(data['uid']))
-            # Just check if decoding works, don't need the result here
-        except (TypeError, ValueError, OverflowError):
-            raise serializers.ValidationError({"uid": "Invalid user ID encoding."})
-        
-        return data
+        model = AuditLog
+        fields = [
+            'id', 'username', 'user_role', 'action', 'action_display',
+            'timestamp', 'ip_address', 'user_agent', 'resource',
+            'details', 'success', 'session_id'
+        ]
+        read_only_fields = fields  # All fields are read-only for audit logs

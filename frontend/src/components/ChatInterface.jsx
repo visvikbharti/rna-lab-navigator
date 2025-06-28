@@ -15,6 +15,7 @@ import { PaperAirplaneIcon as PaperAirplaneSolidIcon } from '@heroicons/react/24
 import ReactMarkdown from 'react-markdown';
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
 import { nightOwl } from 'react-syntax-highlighter/dist/esm/styles/prism';
+import { useAuth } from '../contexts/AuthContext';
 
 const ChatInterface = () => {
   const [sessions, setSessions] = useState([]);

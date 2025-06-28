@@ -1,9 +1,9 @@
 @import './styles/design-tokens.css';
 @import './styles/design-system.css';
 @import './styles/components.css';
-@import './styles/colossal-theme.css';
-@import './styles/colossal-design-tokens.css';
-@import './styles/colossal-components.css';
+/* @import './styles/colossal-theme.css'; */
+/* @import './styles/colossal-design-tokens.css'; */
+/* @import './styles/colossal-components.css'; */
 
 @tailwind base;
 @tailwind components;

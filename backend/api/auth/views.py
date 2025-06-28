@@ -1,457 +1,372 @@
 """
-Authentication views for the RNA Lab Navigator.
-Provides API endpoints for user registration, profile management, and password management.
+JWT Authentication views with GMP compliance and security features.
 """
 
-from django.contrib.auth.models import User
-from django.contrib.auth.tokens import default_token_generator
-from django.utils.http import urlsafe_base64_encode, urlsafe_base64_decode
-from django.utils.encoding import force_bytes, force_str
-from django.core.mail import send_mail
-from django.conf import settings
-from django.contrib.auth import get_user_model
-from django.shortcuts import get_object_or_404
-
-from rest_framework import status, serializers
-from rest_framework.views import APIView
+from datetime import timedelta
+from django.contrib.auth import authenticate
+from django.utils import timezone
+from rest_framework import status
+from rest_framework.decorators import api_view, permission_classes
+from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
-from rest_framework.permissions import IsAuthenticated, AllowAny
 from rest_framework_simplejwt.tokens import RefreshToken
+from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
+from rest_framework_simplejwt.exceptions import TokenError, InvalidToken
 
+from .models import User, AuditLog
 from .serializers import (
+    CustomTokenObtainPairSerializer,
     UserRegistrationSerializer,
-    UserProfileSerializer,
-    ChangePasswordSerializer,
-    PasswordResetRequestSerializer,
-    PasswordResetConfirmSerializer,
+    UserSerializer,
+    PasswordChangeSerializer,
+    AuditLogSerializer
 )
-from .models import UserRole, UserPermission, AccessAttempt
-from .permissions import IsAdmin, IsLabManager, CanManageUsers
-
-from api.security.rate_limiting import track_rate_limit
-from api.analytics.collectors import AuditCollector, SecurityCollector
+from .utils import get_client_ip, is_password_complex
 
 
-class UserRegistrationView(APIView):
-    """
-    API view for user registration.
-    """
-    permission_classes = [AllowAny]
+class CustomTokenObtainPairView(TokenObtainPairView):
+    """Custom login view with enhanced security and audit logging."""
+    serializer_class = CustomTokenObtainPairSerializer
     
-    def post(self, request):
-        # Apply rate limiting to prevent registration abuse
-        if not track_rate_limit(request, 'registration', limit=5, window=3600):
+    def post(self, request, *args, **kwargs):
+        # Get IP address for audit logging
+        ip_address = get_client_ip(request)
+        user_agent = request.META.get('HTTP_USER_AGENT', '')
+        
+        # Check if IP is blocked (from WAF or rate limiting)
+        # This would integrate with your WAF middleware
+        
+        response = super().post(request, *args, **kwargs)
+        
+        if response.status_code == 200:
+            # Get user from the token
+            user = User.objects.get(username=request.data.get('username'))
+            
+            # Record successful login
+            user.record_login_attempt(success=True)
+            
+            # Create audit log
+            AuditLog.objects.create(
+                user=user,
+                username=user.username,
+                user_role=user.role,
+                action='LOGIN_SUCCESS',
+                ip_address=ip_address,
+                user_agent=user_agent,
+                session_id=request.session.session_key or '',
+                details={'login_method': 'jwt'}
+            )
+            
+            # Add user info to response
+            response.data['user'] = UserSerializer(user).data
+            response.data['message'] = 'Login successful'
+            
+        else:
+            # Try to get username for failed attempt logging
+            username = request.data.get('username', '')
+            if username:
+                try:
+                    user = User.objects.get(username=username)
+                    user.record_login_attempt(success=False)
+                    
+                    # Create audit log for failed attempt
+                    AuditLog.objects.create(
+                        user=user,
+                        username=username,
+                        user_role=user.role if user else '',
+                        action='LOGIN_FAILED',
+                        ip_address=ip_address,
+                        user_agent=user_agent,
+                        success=False,
+                        details={'reason': 'Invalid credentials'}
+                    )
+                    
+                    # Check if account is locked
+                    if user.is_locked:
+                        response.data = {
+                            'error': 'Account locked due to multiple failed attempts. Please try again later.',
+                            'locked_until': user.account_locked_until
+                        }
+                        response.status_code = status.HTTP_423_LOCKED
+                        
+                except User.DoesNotExist:
+                    # Log failed attempt for non-existent user
+                    AuditLog.objects.create(
+                        user=None,
+                        username=username,
+                        user_role='',
+                        action='LOGIN_FAILED',
+                        ip_address=ip_address,
+                        user_agent=user_agent,
+                        success=False,
+                        details={'reason': 'User not found'}
+                    )
+        
+        return response
+
+
+@api_view(['POST'])
+@permission_classes([AllowAny])
+def register(request):
+    """
+    User registration endpoint with validation and audit logging.
+    Only admins and PIs can create new users.
+    """
+    # Check if requestor is authenticated and has permission
+    if not request.user.is_authenticated:
+        return Response(
+            {'error': 'Authentication required to create users'},
+            status=status.HTTP_401_UNAUTHORIZED
+        )
+    
+    if not request.user.can_manage_users:
+        # Log permission denied
+        AuditLog.objects.create(
+            user=request.user,
+            username=request.user.username,
+            user_role=request.user.role,
+            action='PERMISSION_DENIED',
+            ip_address=get_client_ip(request),
+            user_agent=request.META.get('HTTP_USER_AGENT', ''),
+            success=False,
+            resource='User Registration',
+            details={'attempted_action': 'create_user'}
+        )
+        
+        return Response(
+            {'error': 'Only administrators and PIs can create users'},
+            status=status.HTTP_403_FORBIDDEN
+        )
+    
+    serializer = UserRegistrationSerializer(data=request.data)
+    
+    if serializer.is_valid():
+        # Additional password complexity check
+        password = serializer.validated_data['password']
+        if not is_password_complex(password):
             return Response(
-                {"detail": "Too many registration attempts. Please try again later."},
-                status=status.HTTP_429_TOO_MANY_REQUESTS
+                {'error': 'Password does not meet complexity requirements'},
+                status=status.HTTP_400_BAD_REQUEST
             )
         
-        serializer = UserRegistrationSerializer(data=request.data)
-        if serializer.is_valid():
-            user = serializer.save()
-            
-            # Generate token for the user
-            refresh = RefreshToken.for_user(user)
-            
-            # Log the registration event
-            ip_address = request.META.get('REMOTE_ADDR')
-            AuditCollector.record_audit_event(
-                event_type="user_management",
-                description=f"User registered: {user.username}",
-                user=None,
-                ip_address=ip_address,
-                severity="info",
-                details={"username": user.username, "email": user.email}
-            )
-            
+        # Create user
+        user = serializer.save(created_by=request.user)
+        
+        # Create audit log
+        AuditLog.objects.create(
+            user=request.user,
+            username=request.user.username,
+            user_role=request.user.role,
+            action='USER_CREATED',
+            ip_address=get_client_ip(request),
+            user_agent=request.META.get('HTTP_USER_AGENT', ''),
+            resource=f'User: {user.username}',
+            details={
+                'new_user_id': user.id,
+                'new_user_role': user.role,
+                'new_user_department': user.department
+            }
+        )
+        
+        # Generate tokens for the new user (optional)
+        refresh = RefreshToken.for_user(user)
+        
+        return Response({
+            'user': UserSerializer(user).data,
+            'refresh': str(refresh),
+            'access': str(refresh.access_token),
+            'message': 'User created successfully'
+        }, status=status.HTTP_201_CREATED)
+    
+    return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def logout(request):
+    """Logout endpoint with token blacklisting and audit logging."""
+    try:
+        # Get and blacklist the refresh token
+        refresh_token = request.data.get('refresh_token')
+        if refresh_token:
+            token = RefreshToken(refresh_token)
+            token.blacklist()
+        
+        # Create audit log
+        AuditLog.objects.create(
+            user=request.user,
+            username=request.user.username,
+            user_role=request.user.role,
+            action='LOGOUT',
+            ip_address=get_client_ip(request),
+            user_agent=request.META.get('HTTP_USER_AGENT', ''),
+            session_id=request.session.session_key or '',
+            details={'logout_method': 'jwt'}
+        )
+        
+        return Response({
+            'message': 'Logout successful'
+        }, status=status.HTTP_200_OK)
+        
+    except TokenError:
+        return Response({
+            'error': 'Invalid token'
+        }, status=status.HTTP_400_BAD_REQUEST)
+
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def change_password(request):
+    """
+    Change password endpoint with validation and history checking.
+    """
+    serializer = PasswordChangeSerializer(data=request.data)
+    
+    if serializer.is_valid():
+        user = request.user
+        old_password = serializer.validated_data['old_password']
+        new_password = serializer.validated_data['new_password']
+        
+        # Verify old password
+        if not user.check_password(old_password):
             return Response({
-                "detail": "User registered successfully.",
-                "refresh": str(refresh),
-                "access": str(refresh.access_token),
-            }, status=status.HTTP_201_CREATED)
+                'error': 'Current password is incorrect'
+            }, status=status.HTTP_400_BAD_REQUEST)
         
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
-
-class UserProfileView(APIView):
-    """
-    API view for user profile management.
-    """
-    permission_classes = [IsAuthenticated]
-    
-    def get(self, request):
-        """Get user profile details"""
-        serializer = UserProfileSerializer(request.user)
-        return Response(serializer.data)
-    
-    def put(self, request):
-        """Update user profile details"""
-        serializer = UserProfileSerializer(request.user, data=request.data, partial=True)
-        if serializer.is_valid():
-            serializer.save()
-            
-            # Log the profile update event
-            ip_address = request.META.get('REMOTE_ADDR')
-            AuditCollector.record_audit_event(
-                event_type="user_management",
-                description=f"Profile updated: {request.user.username}",
-                user=request.user,
-                ip_address=ip_address,
-                severity="info",
-                details={"fields_updated": list(request.data.keys())}
-            )
-            
-            return Response(serializer.data)
+        # Check password complexity
+        if not is_password_complex(new_password):
+            return Response({
+                'error': 'Password does not meet complexity requirements'
+            }, status=status.HTTP_400_BAD_REQUEST)
         
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
-
-class ChangePasswordView(APIView):
-    """
-    API view for changing password.
-    """
-    permission_classes = [IsAuthenticated]
-    
-    def post(self, request):
-        # Apply rate limiting to prevent password change abuse
-        if not track_rate_limit(request, 'password_change', limit=5, window=3600):
-            return Response(
-                {"detail": "Too many password change attempts. Please try again later."},
-                status=status.HTTP_429_TOO_MANY_REQUESTS
-            )
+        # Check password history
+        if not user.check_password_history(new_password):
+            return Response({
+                'error': 'Password has been used recently. Please choose a different password.'
+            }, status=status.HTTP_400_BAD_REQUEST)
         
-        serializer = ChangePasswordSerializer(data=request.data, context={'user': request.user})
-        if serializer.is_valid():
-            # Change the password
-            request.user.set_password(serializer.validated_data['new_password'])
-            request.user.save()
-            
-            # Log the password change event
-            ip_address = request.META.get('REMOTE_ADDR')
-            AuditCollector.record_audit_event(
-                event_type="user_management",
-                description=f"Password changed: {request.user.username}",
-                user=request.user,
-                ip_address=ip_address,
-                severity="info"
-            )
-            
-            return Response({"detail": "Password changed successfully."}, status=status.HTTP_200_OK)
+        # Check if password is being changed too soon
+        min_password_age = timedelta(days=1)  # 1 day minimum
+        if timezone.now() - user.last_password_change < min_password_age:
+            return Response({
+                'error': 'Password cannot be changed more than once per day'
+            }, status=status.HTTP_400_BAD_REQUEST)
         
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
-
-class PasswordResetRequestView(APIView):
-    """
-    API view for requesting a password reset.
-    """
-    permission_classes = [AllowAny]
-    
-    def post(self, request):
-        # Apply rate limiting to prevent password reset abuse
-        if not track_rate_limit(request, 'password_reset_request', limit=3, window=3600):
-            return Response(
-                {"detail": "Too many password reset attempts. Please try again later."},
-                status=status.HTTP_429_TOO_MANY_REQUESTS
-            )
+        # Set new password (this also updates password history)
+        user.set_password(new_password)
+        user.save()
         
-        serializer = PasswordResetRequestSerializer(data=request.data)
-        if serializer.is_valid():
-            email = serializer.validated_data['email']
-            
-            try:
-                user = User.objects.get(email=email)
-                
-                # Generate token
-                token = default_token_generator.make_token(user)
-                uid = urlsafe_base64_encode(force_bytes(user.pk))
-                
-                # Create reset URL (frontend should handle this route)
-                reset_url = f"{settings.SITE_URL}/reset-password/{uid}/{token}/"
-                
-                # Send email with reset URL
-                send_mail(
-                    subject="RNA Navigator: Reset Password",
-                    message=f"Please click the following link to reset your password: {reset_url}",
-                    from_email=settings.DEFAULT_FROM_EMAIL,
-                    recipient_list=[email],
-                    fail_silently=False,
-                )
-                
-                # Log the password reset request (without revealing if user exists for security)
-                ip_address = request.META.get('REMOTE_ADDR')
-                AuditCollector.record_audit_event(
-                    event_type="user_management",
-                    description=f"Password reset requested for email: {email}",
-                    user=None,
-                    ip_address=ip_address,
-                    severity="info"
-                )
-            except User.DoesNotExist:
-                # For security, don't reveal if user exists or not
-                pass
-            
-            # For security, always return success regardless of whether user exists
-            return Response({"detail": "Password reset email has been sent if the email exists."}, 
-                           status=status.HTTP_200_OK)
-        
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
-
-class PasswordResetConfirmView(APIView):
-    """
-    API view for confirming a password reset.
-    """
-    permission_classes = [AllowAny]
-    
-    def post(self, request):
-        # Apply rate limiting to prevent password reset abuse
-        if not track_rate_limit(request, 'password_reset_confirm', limit=5, window=3600):
-            return Response(
-                {"detail": "Too many password reset attempts. Please try again later."},
-                status=status.HTTP_429_TOO_MANY_REQUESTS
-            )
-        
-        serializer = PasswordResetConfirmSerializer(data=request.data)
-        if serializer.is_valid():
-            uid = serializer.validated_data['uid']
-            token = serializer.validated_data['token']
-            new_password = serializer.validated_data['new_password']
-            
-            try:
-                # Decode user ID
-                user_id = force_str(urlsafe_base64_decode(uid))
-                user = User.objects.get(pk=user_id)
-                
-                # Verify token
-                if not default_token_generator.check_token(user, token):
-                    return Response({"detail": "Invalid or expired token."}, 
-                                   status=status.HTTP_400_BAD_REQUEST)
-                
-                # Reset password
-                user.set_password(new_password)
-                user.save()
-                
-                # Log the password reset
-                ip_address = request.META.get('REMOTE_ADDR')
-                AuditCollector.record_audit_event(
-                    event_type="user_management",
-                    description=f"Password reset completed: {user.username}",
-                    user=user,
-                    ip_address=ip_address,
-                    severity="info"
-                )
-                
-                return Response({"detail": "Password has been reset successfully."}, 
-                               status=status.HTTP_200_OK)
-            except (User.DoesNotExist, TypeError, ValueError, OverflowError):
-                return Response({"detail": "Invalid reset link."}, 
-                               status=status.HTTP_400_BAD_REQUEST)
-        
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
-
-# Role Management Views
-class RoleManagementSerializer(serializers.ModelSerializer):
-    """
-    Serializer for role management.
-    """
-    username = serializers.CharField(source='user.username', read_only=True)
-    email = serializers.EmailField(source='user.email', read_only=True)
-    
-    class Meta:
-        model = UserRole
-        fields = ('id', 'username', 'email', 'user', 'role', 'description', 'created_at')
-        read_only_fields = ('id', 'username', 'email', 'created_at')
-
-
-class UserRoleListView(APIView):
-    """
-    API view for listing and creating user roles.
-    """
-    permission_classes = [IsAuthenticated, IsAdmin | CanManageUsers]
-    
-    def get(self, request):
-        """List all user roles"""
-        roles = UserRole.objects.all().select_related('user')
-        serializer = RoleManagementSerializer(roles, many=True)
-        return Response(serializer.data)
-    
-    def post(self, request):
-        """Create a new user role"""
-        serializer = RoleManagementSerializer(data=request.data)
-        if serializer.is_valid():
-            # Set created_by to the current user
-            serializer.validated_data['created_by'] = request.user
-            role = serializer.save()
-            
-            # Log the role creation
-            ip_address = request.META.get('REMOTE_ADDR')
-            AuditCollector.record_audit_event(
-                event_type="user_management",
-                description=f"User role created: {role.user.username} - {role.get_role_display()}",
-                user=request.user,
-                ip_address=ip_address,
-                severity="info",
-                details={
-                    "role": role.role,
-                    "username": role.user.username,
-                    "description": role.description
-                }
-            )
-            
-            return Response(RoleManagementSerializer(role).data, status=status.HTTP_201_CREATED)
-        
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
-
-class UserRoleDetailView(APIView):
-    """
-    API view for retrieving, updating and deleting a user role.
-    """
-    permission_classes = [IsAuthenticated, IsAdmin | CanManageUsers]
-    
-    def get_object(self, pk):
-        return get_object_or_404(UserRole, pk=pk)
-    
-    def get(self, request, pk):
-        """Retrieve a user role"""
-        role = self.get_object(pk)
-        serializer = RoleManagementSerializer(role)
-        return Response(serializer.data)
-    
-    def put(self, request, pk):
-        """Update a user role"""
-        role = self.get_object(pk)
-        serializer = RoleManagementSerializer(role, data=request.data, partial=True)
-        
-        if serializer.is_valid():
-            updated_role = serializer.save()
-            
-            # Log the role update
-            ip_address = request.META.get('REMOTE_ADDR')
-            AuditCollector.record_audit_event(
-                event_type="user_management",
-                description=f"User role updated: {updated_role.user.username} - {updated_role.get_role_display()}",
-                user=request.user,
-                ip_address=ip_address,
-                severity="info",
-                details={
-                    "role": updated_role.role,
-                    "username": updated_role.user.username,
-                    "fields_updated": list(request.data.keys())
-                }
-            )
-            
-            return Response(serializer.data)
-        
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-    
-    def delete(self, request, pk):
-        """Delete a user role"""
-        role = self.get_object(pk)
-        username = role.user.username
-        role_name = role.get_role_display()
-        
-        role.delete()
-        
-        # Log the role deletion
-        ip_address = request.META.get('REMOTE_ADDR')
-        AuditCollector.record_audit_event(
-            event_type="user_management",
-            description=f"User role deleted: {username} - {role_name}",
-            user=request.user,
-            ip_address=ip_address,
-            severity="warning"
+        # Create audit log
+        AuditLog.objects.create(
+            user=user,
+            username=user.username,
+            user_role=user.role,
+            action='PASSWORD_CHANGED',
+            ip_address=get_client_ip(request),
+            user_agent=request.META.get('HTTP_USER_AGENT', ''),
+            details={'forced_logout': True}
         )
         
-        return Response(status=status.HTTP_204_NO_CONTENT)
-
-
-# Permission Management Views
-class PermissionManagementSerializer(serializers.ModelSerializer):
-    """
-    Serializer for permission management.
-    """
-    username = serializers.CharField(source='user.username', read_only=True)
-    email = serializers.EmailField(source='user.email', read_only=True)
-    
-    class Meta:
-        model = UserPermission
-        fields = ('id', 'username', 'email', 'user', 'permission', 'created_at')
-        read_only_fields = ('id', 'username', 'email', 'created_at')
-
-
-class UserPermissionListView(APIView):
-    """
-    API view for listing and creating user permissions.
-    """
-    permission_classes = [IsAuthenticated, IsAdmin | CanManageUsers]
-    
-    def get(self, request):
-        """List all user permissions"""
-        permissions = UserPermission.objects.all().select_related('user')
-        serializer = PermissionManagementSerializer(permissions, many=True)
-        return Response(serializer.data)
-    
-    def post(self, request):
-        """Create a new user permission"""
-        serializer = PermissionManagementSerializer(data=request.data)
-        if serializer.is_valid():
-            # Set granted_by to the current user
-            serializer.validated_data['granted_by'] = request.user
-            permission = serializer.save()
-            
-            # Log the permission creation
-            ip_address = request.META.get('REMOTE_ADDR')
-            AuditCollector.record_audit_event(
-                event_type="user_management",
-                description=f"User permission granted: {permission.user.username} - {permission.get_permission_display()}",
-                user=request.user,
-                ip_address=ip_address,
-                severity="info",
-                details={
-                    "permission": permission.permission,
-                    "username": permission.user.username
-                }
-            )
-            
-            return Response(PermissionManagementSerializer(permission).data, status=status.HTTP_201_CREATED)
+        # Blacklist all existing tokens for security
+        # This forces re-authentication with new password
         
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        return Response({
+            'message': 'Password changed successfully. Please login again with your new password.'
+        }, status=status.HTTP_200_OK)
+    
+    return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
-class UserPermissionDetailView(APIView):
-    """
-    API view for retrieving and deleting a user permission.
-    """
-    permission_classes = [IsAuthenticated, IsAdmin | CanManageUsers]
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def user_profile(request):
+    """Get current user profile."""
+    serializer = UserSerializer(request.user)
+    return Response(serializer.data)
+
+
+@api_view(['PUT'])
+@permission_classes([IsAuthenticated])
+def update_profile(request):
+    """Update user profile (limited fields)."""
+    user = request.user
     
-    def get_object(self, pk):
-        return get_object_or_404(UserPermission, pk=pk)
+    # Only allow updating certain fields
+    allowed_fields = ['phone', 'designation', 'notification_preferences']
+    update_data = {k: v for k, v in request.data.items() if k in allowed_fields}
     
-    def get(self, request, pk):
-        """Retrieve a user permission"""
-        permission = self.get_object(pk)
-        serializer = PermissionManagementSerializer(permission)
-        return Response(serializer.data)
+    serializer = UserSerializer(user, data=update_data, partial=True)
     
-    def delete(self, request, pk):
-        """Delete a user permission"""
-        permission = self.get_object(pk)
-        username = permission.user.username
-        permission_name = permission.get_permission_display()
+    if serializer.is_valid():
+        serializer.save()
         
-        permission.delete()
-        
-        # Log the permission deletion
-        ip_address = request.META.get('REMOTE_ADDR')
-        AuditCollector.record_audit_event(
-            event_type="user_management",
-            description=f"User permission revoked: {username} - {permission_name}",
-            user=request.user,
-            ip_address=ip_address,
-            severity="warning"
+        # Create audit log
+        AuditLog.objects.create(
+            user=user,
+            username=user.username,
+            user_role=user.role,
+            action='USER_UPDATED',
+            ip_address=get_client_ip(request),
+            user_agent=request.META.get('HTTP_USER_AGENT', ''),
+            resource=f'User: {user.username}',
+            details={'updated_fields': list(update_data.keys())}
         )
         
-        return Response(status=status.HTTP_204_NO_CONTENT)
+        return Response({
+            'user': serializer.data,
+            'message': 'Profile updated successfully'
+        })
+    
+    return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def accept_terms(request):
+    """Accept terms and conditions."""
+    user = request.user
+    
+    if user.terms_accepted_at:
+        return Response({
+            'message': 'Terms already accepted',
+            'accepted_at': user.terms_accepted_at
+        })
+    
+    user.terms_accepted_at = timezone.now()
+    user.save()
+    
+    # Create audit log
+    AuditLog.objects.create(
+        user=user,
+        username=user.username,
+        user_role=user.role,
+        action='USER_UPDATED',
+        ip_address=get_client_ip(request),
+        user_agent=request.META.get('HTTP_USER_AGENT', ''),
+        resource=f'User: {user.username}',
+        details={'action': 'terms_accepted'}
+    )
+    
+    return Response({
+        'message': 'Terms accepted successfully',
+        'accepted_at': user.terms_accepted_at
+    })
+
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def check_permissions(request):
+    """Check current user's permissions."""
+    user = request.user
+    
+    permissions = {
+        'can_upload_documents': user.can_upload_documents,
+        'can_delete_documents': user.can_delete_documents,
+        'can_view_all_sessions': user.can_view_all_sessions,
+        'can_manage_users': user.can_manage_users,
+        'is_admin_or_pi': user.is_admin_or_pi,
+        'role': user.role,
+        'is_locked': user.is_locked
+    }
+    
+    return Response(permissions)

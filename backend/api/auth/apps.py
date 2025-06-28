@@ -12,5 +12,5 @@ class AuthConfig(AppConfig):
     verbose_name = 'Authentication'
     
     def ready(self):
-        # Import signal handlers
-        import api.auth.signals
+        # Signal handlers can be imported here if needed
+        pass

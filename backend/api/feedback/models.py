@@ -5,7 +5,7 @@ Enhanced models for the comprehensive feedback system.
 from django.db import models
 from django.core.validators import MinValueValidator, MaxValueValidator
 from django.utils import timezone
-from django.contrib.auth.models import User
+from django.conf import settings
 import uuid
 
 from ..models import QueryHistory
@@ -46,7 +46,7 @@ class EnhancedFeedback(models.Model):
         related_name='enhanced_feedback'
     )
     user = models.ForeignKey(
-        User,
+        settings.AUTH_USER_MODEL,
         on_delete=models.SET_NULL,
         null=True,
         blank=True,
@@ -112,7 +112,7 @@ class EnhancedFeedback(models.Model):
         help_text="Issues with the retrieved sources"
     )
     reviewed_by = models.ForeignKey(
-        User,
+        settings.AUTH_USER_MODEL,
         on_delete=models.SET_NULL,
         null=True,
         blank=True,
@@ -231,7 +231,7 @@ class FeedbackTheme(models.Model):
     first_reported = models.DateTimeField(auto_now_add=True)
     last_reported = models.DateTimeField(auto_now=True)
     assigned_to = models.ForeignKey(
-        User,
+        settings.AUTH_USER_MODEL,
         on_delete=models.SET_NULL,
         null=True,
         blank=True,
@@ -279,7 +279,7 @@ class FeedbackAnalysis(models.Model):
     actions_implemented = models.JSONField(default=list)
     implementation_date = models.DateTimeField(null=True, blank=True)
     implemented_by = models.ForeignKey(
-        User,
+        settings.AUTH_USER_MODEL,
         on_delete=models.SET_NULL,
         null=True,
         blank=True,
@@ -314,7 +314,7 @@ class FeedbackThemeMapping(models.Model):
     )
     mapped_at = models.DateTimeField(auto_now_add=True)
     mapped_by = models.ForeignKey(
-        User,
+        settings.AUTH_USER_MODEL,
         on_delete=models.SET_NULL,
         null=True,
         blank=True

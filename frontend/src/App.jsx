@@ -4,31 +4,40 @@ import { Toaster } from 'react-hot-toast';
 import { motion, AnimatePresence } from 'framer-motion';
 import ErrorBoundary from './components/ErrorBoundary';
 import { NotificationProvider } from './components/NotificationSystem';
-import EnhancedSearchInterface from './components/EnhancedSearchInterface';
+import { AuthProvider } from './contexts/AuthContext';
+import Login from './components/auth/Login';
+import PrivateRoute from './components/auth/PrivateRoute';
+import UserProfile from './components/auth/UserProfile';
+import TermsAcceptance from './components/auth/TermsAcceptance';
+import UserMenu from './components/auth/UserMenu';
+// import EnhancedSearchInterface from './components/EnhancedSearchInterface';
 import FilterChips from './components/FilterChips';
-import ProtocolUploader from './components/ProtocolUploader';
+// import ProtocolUploader from './components/ProtocolUploader';
 import DocumentUploader from './components/DocumentUploader';
-import GapExplorer from './components/GapExplorer';
-import CrossPaperInsights from './components/CrossPaperInsights';
-import HypothesisExplorer from './components/HypothesisExplorer';
-import ProtocolBuilder from './components/ProtocolBuilder';
-import ExperimentMapper from './components/ExperimentMapper';
-import KnowledgeGraphExplorer from './components/KnowledgeGraphExplorer';
-import { FeedbackAnalyticsDashboard } from './components/feedback';
-import SearchQualityDashboard from './components/SearchQualityDashboard';
-import SecurityAuditDashboard from './components/SecurityAuditDashboard';
-import SimpleSearch from './SimpleSearch';
-import { AnimationProvider } from './contexts/AnimationContext';
+// import GapExplorer from './components/GapExplorer';
+// import CrossPaperInsights from './components/CrossPaperInsights';
+// import HypothesisExplorer from './components/HypothesisExplorer';
+// import ProtocolBuilder from './components/ProtocolBuilder';
+// import ExperimentMapper from './components/ExperimentMapper';
+// import KnowledgeGraphExplorer from './components/KnowledgeGraphExplorer';
+// import { FeedbackAnalyticsDashboard } from './components/feedback';
+// import SearchQualityDashboard from './components/SearchQualityDashboard';
+// import SecurityAuditDashboard from './components/SecurityAuditDashboard';
+// import SimpleSearch from './SimpleSearch';
+// import { AnimationProvider } from './contexts/AnimationContext';
 import { DarkModeProvider } from './contexts/DarkModeContext';
 import DarkModeToggle from './components/DarkModeToggle';
-import { ParticleBackground, FloatingOrbs, GlassCard, GradientText } from './components/enhanced';
-import { MagnifyingGlassIcon, BeakerIcon, DocumentTextIcon, ChartBarIcon, ShieldCheckIcon, MapIcon, CloudArrowUpIcon, SparklesIcon, LightBulbIcon, LinkIcon, Bars3Icon, XMarkIcon, CubeTransparentIcon } from '@heroicons/react/24/outline';
-import MultiAgentAnalysis from './components/MultiAgentAnalysis';
-import ProtocolDesigner from './components/ProtocolDesigner';
-import TestRoutes from './TestRoutes';
+// import { ParticleBackground, FloatingOrbs, GlassCard, GradientText } from './components/enhanced';
+import { MagnifyingGlassIcon, BeakerIcon, DocumentTextIcon, ChartBarIcon, ShieldCheckIcon, MapIcon, CloudArrowUpIcon, SparklesIcon, LightBulbIcon, LinkIcon, Bars3Icon, XMarkIcon, CubeTransparentIcon, UsersIcon } from '@heroicons/react/24/outline';
+// import MultiAgentAnalysis from './components/MultiAgentAnalysis';
+// import ProtocolDesigner from './components/ProtocolDesigner';
+// import TestRoutes from './TestRoutes';
 import ChatInterface from './components/ChatInterface';
+import AdminDashboard from './components/admin/AdminDashboard';
+import UserManagement from './components/admin/UserManagement';
+import AuditLogs from './components/admin/AuditLogs';
 // Use clean, working CSS
-import './styles/app-clean.css';
+// import './styles/app-clean.css';
 
 function Navigation() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -66,9 +75,7 @@ function Navigation() {
           </div>
           <div className="flex items-center space-x-4">
             <DarkModeToggle />
-            <div className="text-gray-400 text-sm hidden sm:block">
-              CSIR-IGIB
-            </div>
+            <UserMenu />
             <button
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
               className="lg:hidden p-2 rounded-lg text-gray-400 hover:text-white hover:bg-white/10 transition-all"
@@ -348,145 +355,234 @@ function App() {
       <NotificationProvider>
         <DarkModeProvider>
           <AnimationProvider>
-            <Router>
-            <Routes>
-            {/* Chat interface is the default route */}
-            <Route path="/" element={<ChatInterface />} />
-            
-            {/* Old search interface */}
-            <Route path="/old-search" element={<MainSearch />} />
-            
-            {/* Simple search interface for demo */}
-            <Route path="/simple" element={<SimpleSearch />} />
-            
-            {/* Secondary features */}
-            <Route path="/upload" element={
-              <PageWrapper 
-                title="Upload Documents" 
-                subtitle="Add new research materials to your knowledge base"
-                icon={CloudArrowUpIcon}
-              >
-                <DocumentUploader />
-              </PageWrapper>
-            } />
-            
-            <Route path="/gaps" element={
-              <PageWrapper 
-                title="Knowledge Gap Explorer" 
-                subtitle="Discover research opportunities and unexplored areas"
-                icon={LightBulbIcon}
-              >
-                <GapExplorer />
-              </PageWrapper>
-            } />
-            
-            <Route path="/insights" element={
-              <PageWrapper 
-                title="Cross-Paper Insights" 
-                subtitle="Uncover connections and patterns across research papers"
-                icon={LinkIcon}
-              >
-                <CrossPaperInsights />
-              </PageWrapper>
-            } />
-            
-            <Route path="/graph" element={
-              <PageWrapper 
-                title="Knowledge Graph Explorer" 
-                subtitle="Visualize research connections in real-time"
-                icon={LinkIcon}
-              >
-                <KnowledgeGraphExplorer />
-              </PageWrapper>
-            } />
-            
-            <Route path="/experiments" element={
-              <PageWrapper 
-                title="Experiment Mapper" 
-                subtitle="Visualize and analyze experimental relationships"
-                icon={MapIcon}
-              >
-                <ExperimentMapper />
-              </PageWrapper>
-            } />
-            
-            <Route path="/agents" element={
-              <PageWrapper 
-                title="Multi-Agent Research Analysis" 
-                subtitle="AI research team analyzing papers for patterns and contradictions"
-                icon={SparklesIcon}
-              >
-                <MultiAgentAnalysis />
-              </PageWrapper>
-            } />
-            
-            <Route path="/protocol-designer" element={
-              <PageWrapper 
-                title="AI Protocol Designer" 
-                subtitle="Generate complete experimental protocols from hypotheses"
-                icon={BeakerIcon}
-              >
-                <ProtocolDesigner />
-              </PageWrapper>
-            } />
-            
-            <Route path="/analytics" element={
-              <PageWrapper 
-                title="Analytics Dashboard" 
-                subtitle="Track performance and user insights"
-                icon={ChartBarIcon}
-              >
-                <FeedbackAnalyticsDashboard />
-              </PageWrapper>
-            } />
-            
-            <Route path="/security" element={
-              <PageWrapper 
-                title="Security Audit" 
-                subtitle="Monitor and protect your research data"
-                icon={ShieldCheckIcon}
-              >
-                <SecurityAuditDashboard />
-              </PageWrapper>
-            } />
-            
-            <Route path="/search-quality" element={
-              <PageWrapper 
-                title="Search Quality" 
-                subtitle="Optimize search performance and accuracy"
-                icon={ChartBarIcon}
-              >
-                <SearchQualityDashboard />
-              </PageWrapper>
-            } />
-            
-            {/* Test route */}
-            <Route path="/test" element={<TestRoutes />} />
-            
-            {/* Redirect old routes */}
-            <Route path="/app" element={<Navigate to="/" replace />} />
-            <Route path="/showcase" element={<Navigate to="/" replace />} />
-          </Routes>
-          
-          {/* Toast notifications with glass effect */}
-          <Toaster
-            position="top-right"
-            toastOptions={{
-              duration: 4000,
-              style: {
-                background: 'rgba(17, 24, 39, 0.8)',
-                backdropFilter: 'blur(10px)',
-                color: '#ffffff',
-                border: '1px solid rgba(59, 130, 246, 0.3)',
-                borderRadius: '12px',
-                boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)',
-              },
-            }}
-          />
-        </Router>
-      </AnimationProvider>
-    </DarkModeProvider>
-    </NotificationProvider>
+            <AuthProvider>
+              <Router>
+                <Routes>
+                  {/* Public routes */}
+                  <Route path="/login" element={<Login />} />
+                  
+                  {/* Protected routes */}
+                  <Route path="/accept-terms" element={
+                    <PrivateRoute>
+                      <TermsAcceptance />
+                    </PrivateRoute>
+                  } />
+                  
+                  <Route path="/profile" element={
+                    <PrivateRoute>
+                      <PageWrapper title="My Profile" icon={MagnifyingGlassIcon}>
+                        <UserProfile />
+                      </PageWrapper>
+                    </PrivateRoute>
+                  } />
+                  
+                  {/* Chat interface is the default route */}
+                  <Route path="/" element={
+                    <PrivateRoute>
+                      <ChatInterface />
+                    </PrivateRoute>
+                  } />
+                  
+                  {/* Old search interface */}
+                  <Route path="/old-search" element={
+                    <PrivateRoute>
+                      <MainSearch />
+                    </PrivateRoute>
+                  } />
+                  
+                  {/* Simple search interface for demo */}
+                  <Route path="/simple" element={
+                    <PrivateRoute>
+                      <SimpleSearch />
+                    </PrivateRoute>
+                  } />
+                  
+                  {/* Secondary features */}
+                  <Route path="/upload" element={
+                    <PrivateRoute requiredPermission="canUploadDocuments">
+                      <PageWrapper 
+                        title="Upload Documents" 
+                        subtitle="Add new research materials to your knowledge base"
+                        icon={CloudArrowUpIcon}
+                      >
+                        <DocumentUploader />
+                      </PageWrapper>
+                    </PrivateRoute>
+                  } />
+                  
+                  <Route path="/gaps" element={
+                    <PrivateRoute>
+                      <PageWrapper 
+                        title="Knowledge Gap Explorer" 
+                        subtitle="Discover research opportunities and unexplored areas"
+                        icon={LightBulbIcon}
+                      >
+                        <GapExplorer />
+                      </PageWrapper>
+                    </PrivateRoute>
+                  } />
+                  
+                  <Route path="/insights" element={
+                    <PrivateRoute>
+                      <PageWrapper 
+                        title="Cross-Paper Insights" 
+                        subtitle="Uncover connections and patterns across research papers"
+                        icon={LinkIcon}
+                      >
+                        <CrossPaperInsights />
+                      </PageWrapper>
+                    </PrivateRoute>
+                  } />
+                  
+                  <Route path="/graph" element={
+                    <PrivateRoute>
+                      <PageWrapper 
+                        title="Knowledge Graph Explorer" 
+                        subtitle="Visualize research connections in real-time"
+                        icon={LinkIcon}
+                      >
+                        <KnowledgeGraphExplorer />
+                      </PageWrapper>
+                    </PrivateRoute>
+                  } />
+                  
+                  <Route path="/experiments" element={
+                    <PrivateRoute>
+                      <PageWrapper 
+                        title="Experiment Mapper" 
+                        subtitle="Visualize and analyze experimental relationships"
+                        icon={MapIcon}
+                      >
+                        <ExperimentMapper />
+                      </PageWrapper>
+                    </PrivateRoute>
+                  } />
+                  
+                  <Route path="/agents" element={
+                    <PrivateRoute>
+                      <PageWrapper 
+                        title="Multi-Agent Research Analysis" 
+                        subtitle="AI research team analyzing papers for patterns and contradictions"
+                        icon={SparklesIcon}
+                      >
+                        <MultiAgentAnalysis />
+                      </PageWrapper>
+                    </PrivateRoute>
+                  } />
+                  
+                  <Route path="/protocol-designer" element={
+                    <PrivateRoute>
+                      <PageWrapper 
+                        title="AI Protocol Designer" 
+                        subtitle="Generate complete experimental protocols from hypotheses"
+                        icon={BeakerIcon}
+                      >
+                        <ProtocolDesigner />
+                      </PageWrapper>
+                    </PrivateRoute>
+                  } />
+                  
+                  <Route path="/analytics" element={
+                    <PrivateRoute requiredRole={['ADMIN', 'PI']}>
+                      <PageWrapper 
+                        title="Analytics Dashboard" 
+                        subtitle="Track performance and user insights"
+                        icon={ChartBarIcon}
+                      >
+                        <FeedbackAnalyticsDashboard />
+                      </PageWrapper>
+                    </PrivateRoute>
+                  } />
+                  
+                  <Route path="/security" element={
+                    <PrivateRoute requiredRole="ADMIN">
+                      <PageWrapper 
+                        title="Security Audit" 
+                        subtitle="Monitor and protect your research data"
+                        icon={ShieldCheckIcon}
+                      >
+                        <SecurityAuditDashboard />
+                      </PageWrapper>
+                    </PrivateRoute>
+                  } />
+                  
+                  <Route path="/search-quality" element={
+                    <PrivateRoute requiredRole={['ADMIN', 'PI']}>
+                      <PageWrapper 
+                        title="Search Quality" 
+                        subtitle="Optimize search performance and accuracy"
+                        icon={ChartBarIcon}
+                      >
+                        <SearchQualityDashboard />
+                      </PageWrapper>
+                    </PrivateRoute>
+                  } />
+                  
+                  {/* Test route */}
+                  <Route path="/test" element={<TestRoutes />} />
+                  
+                  {/* Admin Routes */}
+                  <Route path="/admin" element={
+                    <PrivateRoute requiredRole={['ADMIN', 'PI']}>
+                      <PageWrapper 
+                        title="Admin Panel" 
+                        subtitle="Manage users and system settings"
+                        icon={ShieldCheckIcon}
+                      >
+                        <AdminDashboard />
+                      </PageWrapper>
+                    </PrivateRoute>
+                  } />
+                  
+                  <Route path="/admin/users" element={
+                    <PrivateRoute requiredRole={['ADMIN', 'PI']}>
+                      <PageWrapper 
+                        title="User Management" 
+                        subtitle="Create, edit, and manage user accounts"
+                        icon={UsersIcon}
+                      >
+                        <UserManagement />
+                      </PageWrapper>
+                    </PrivateRoute>
+                  } />
+                  
+                  <Route path="/admin/audit-logs" element={
+                    <PrivateRoute requiredRole={['ADMIN', 'PI']}>
+                      <PageWrapper 
+                        title="Audit Logs" 
+                        subtitle="View system activity and security events"
+                        icon={ShieldCheckIcon}
+                      >
+                        <AuditLogs />
+                      </PageWrapper>
+                    </PrivateRoute>
+                  } />
+                  
+                  {/* Redirect old routes */}
+                  <Route path="/app" element={<Navigate to="/" replace />} />
+                  <Route path="/showcase" element={<Navigate to="/" replace />} />
+                </Routes>
+                
+                {/* Toast notifications with glass effect */}
+                <Toaster
+                  position="top-right"
+                  toastOptions={{
+                    duration: 4000,
+                    style: {
+                      background: 'rgba(17, 24, 39, 0.8)',
+                      backdropFilter: 'blur(10px)',
+                      color: '#ffffff',
+                      border: '1px solid rgba(59, 130, 246, 0.3)',
+                      borderRadius: '12px',
+                      boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)',
+                    },
+                  }}
+                />
+              </Router>
+            </AuthProvider>
+          </AnimationProvider>
+        </DarkModeProvider>
+      </NotificationProvider>
     </ErrorBoundary>
   );
 }

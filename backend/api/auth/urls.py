@@ -1,46 +1,40 @@
 """
-Authentication URLs for the RNA Lab Navigator.
-Provides JWT token-based authentication and user management endpoints.
+URL configuration for authentication endpoints.
 """
 
 from django.urls import path
-from rest_framework_simplejwt.views import (
-    TokenObtainPairView,
-    TokenRefreshView,
-    TokenVerifyView,
-    TokenBlacklistView,
-)
+from rest_framework_simplejwt.views import TokenRefreshView
+
 from .views import (
-    UserProfileView,
-    UserRegistrationView,
-    ChangePasswordView,
-    PasswordResetRequestView,
-    PasswordResetConfirmView,
-    UserRoleListView,
-    UserRoleDetailView,
-    UserPermissionListView,
-    UserPermissionDetailView,
+    CustomTokenObtainPairView,
+    register,
+    logout,
+    change_password,
+    user_profile,
+    update_profile,
+    accept_terms,
+    check_permissions,
 )
 
+app_name = 'auth'
+
 urlpatterns = [
-    # JWT Token endpoints
-    path('token/', TokenObtainPairView.as_view(), name='token_obtain_pair'),
-    path('token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
-    path('token/verify/', TokenVerifyView.as_view(), name='token_verify'),
-    path('token/blacklist/', TokenBlacklistView.as_view(), name='token_blacklist'),
+    # JWT Authentication
+    path('login/', CustomTokenObtainPairView.as_view(), name='login'),
+    path('refresh/', TokenRefreshView.as_view(), name='token_refresh'),
+    path('logout/', logout, name='logout'),
     
-    # User management endpoints
-    path('profile/', UserProfileView.as_view(), name='user_profile'),
-    path('register/', UserRegistrationView.as_view(), name='user_registration'),
-    path('change-password/', ChangePasswordView.as_view(), name='change_password'),
+    # User Management
+    path('register/', register, name='register'),
+    path('profile/', user_profile, name='user_profile'),
+    path('profile/update/', update_profile, name='update_profile'),
     
-    # Password reset endpoints
-    path('password-reset/', PasswordResetRequestView.as_view(), name='password_reset_request'),
-    path('password-reset/confirm/', PasswordResetConfirmView.as_view(), name='password_reset_confirm'),
+    # Password Management
+    path('change-password/', change_password, name='change_password'),
     
-    # Role-based access control endpoints
-    path('roles/', UserRoleListView.as_view(), name='user_roles'),
-    path('roles/<int:pk>/', UserRoleDetailView.as_view(), name='user_role_detail'),
-    path('permissions/', UserPermissionListView.as_view(), name='user_permissions'),
-    path('permissions/<int:pk>/', UserPermissionDetailView.as_view(), name='user_permission_detail'),
+    # Compliance
+    path('accept-terms/', accept_terms, name='accept_terms'),
+    
+    # Permissions
+    path('permissions/', check_permissions, name='check_permissions'),
 ]

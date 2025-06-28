@@ -4,7 +4,7 @@ Extends the analytics app with security-specific models.
 """
 
 from django.db import models
-from django.contrib.auth.models import User
+from django.conf import settings
 from django.utils import timezone
 from api.analytics.models import SecurityEvent
 
@@ -28,7 +28,7 @@ class BlockedIP(models.Model):
     blocked_at = models.DateTimeField(default=timezone.now)
     blocked_until = models.DateTimeField(null=True, blank=True)
     description = models.TextField(blank=True)
-    blocked_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='blocked_ips')
+    blocked_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True, related_name='blocked_ips')
     is_permanent = models.BooleanField(default=False)
     details = models.JSONField(default=dict, blank=True)
     
@@ -78,7 +78,7 @@ class SecurityConfiguration(models.Model):
     old_value = models.TextField(null=True, blank=True)
     new_value = models.TextField()
     changed_at = models.DateTimeField(default=timezone.now)
-    changed_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True)
+    changed_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True)
     description = models.TextField(blank=True)
     
     class Meta:
@@ -120,7 +120,7 @@ class SecurityScan(models.Model):
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='scheduled')
     started_at = models.DateTimeField(default=timezone.now)
     completed_at = models.DateTimeField(null=True, blank=True)
-    initiated_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True)
+    initiated_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True)
     tool = models.CharField(max_length=100, blank=True)
     summary = models.TextField(blank=True)
     high_severity_findings = models.PositiveSmallIntegerField(default=0)
@@ -174,9 +174,9 @@ class SecurityIncident(models.Model):
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='detected')
     severity = models.CharField(max_length=20, choices=SEVERITY_LEVELS, default='medium')
     detected_at = models.DateTimeField(default=timezone.now)
-    reported_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='reported_incidents')
+    reported_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True, related_name='reported_incidents')
     resolved_at = models.DateTimeField(null=True, blank=True)
-    resolved_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='resolved_incidents')
+    resolved_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True, related_name='resolved_incidents')
     affected_systems = models.TextField(blank=True)
     description = models.TextField()
     response_actions = models.TextField(blank=True)
@@ -231,7 +231,7 @@ class WAFAlert(models.Model):
     severity = models.CharField(max_length=20, choices=SEVERITY_LEVELS, default='medium')
     timestamp = models.DateTimeField(default=timezone.now)
     ip_address = models.GenericIPAddressField(null=True, blank=True)
-    user = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True)
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True)
     request_path = models.CharField(max_length=255)
     request_method = models.CharField(max_length=10)
     matched_pattern = models.CharField(max_length=255, blank=True)
