@@ -641,7 +641,7 @@ class QueryView(APIView):
                     llm_start_time = time.time()
                     
                     if is_offline_mode():
-                        response = client.chat().completions().create(
+                        response = client.chat.completions.create(
                             model=selected_model,
                             messages=messages,
                             temperature=0.2,
@@ -770,7 +770,7 @@ class QueryView(APIView):
                 llm_start_time = time.time()
                 
                 if is_offline_mode():
-                    response = client.chat().completions().create(
+                    response = client.chat.completions.create(
                         model=selected_model,
                         messages=messages,
                         temperature=0.2,

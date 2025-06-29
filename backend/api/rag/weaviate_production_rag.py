@@ -17,13 +17,13 @@ class WeaviateProductionRAG:
     
     def __init__(self):
         # Initialize OpenAI
-        self.client = OpenAI(api_key=settings.OPENAI_API_KEY)
+        self.openai_client = OpenAI(api_key=settings.OPENAI_API_KEY)
         self.cache_ttl = getattr(settings, 'PRODUCTION_RAG_CACHE_TTL', 3600)
         self.max_context_chars = 10000  # Reduced for faster processing
         self.top_k = 4  # Reduced from 5 for faster retrieval
         
         # Connect to Weaviate
-        self.client = weaviate.Client("http://localhost:8080")
+        self.weaviate_client = weaviate.Client("http://localhost:8080")
         
         # Preload common queries for instant responses
         self._preload_common_queries()
@@ -42,7 +42,7 @@ class WeaviateProductionRAG:
         # Search using Weaviate's hybrid search (BM25 + vector)
         try:
             # Use BM25 for keyword matching
-            result = self.client.query.get(
+            result = self.weaviate_client.query.get(
                 "Document",
                 ["content", "title", "author", "doc_type", "year", "chapter"]
             ).with_bm25(
@@ -169,7 +169,7 @@ Instructions:
 Remember: Be helpful, specific, and practical for lab members."""
 
         try:
-            response = self.client.chat.completions.create(
+            response = self.openai_client.chat.completions.create(
                 model="gpt-4o",  # Use gpt-4o for fast responses
                 messages=[
                     {"role": "system", "content": "You are an expert RNA biology research assistant. Be concise."},
@@ -178,9 +178,14 @@ Remember: Be helpful, specific, and practical for lab members."""
                 max_tokens=500,  # Reduced for faster response
                 temperature=0.1
             )
-            return response.choices[0].message['content']
+            return response.choices[0].message.content
         except Exception as e:
+            import traceback
             print(f"OpenAI error: {e}")
+            print(f"Error type: {type(e).__name__}")
+            print(f"Traceback: {traceback.format_exc()}")
+            print(f"API Key set: {'Yes' if self.openai_client.api_key else 'No'}")
+            print(f"API Key length: {len(self.openai_client.api_key) if self.openai_client.api_key else 0}")
             return "I apologize, but I encountered an error while generating the answer."
     
     def _extract_sources(self, results: List[Dict]) -> List[Dict]:
