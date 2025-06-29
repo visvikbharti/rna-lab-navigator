@@ -27,64 +27,81 @@ import weaviate
 
 def get_simple_weaviate_client():
     """Get a simple Weaviate client."""
-    client = weaviate.connect_to_local(host="localhost", port=8080)
+    # Pass OpenAI API key to Weaviate
+    additional_headers = {
+        "X-OpenAI-Api-Key": settings.OPENAI_API_KEY
+    }
+    client = weaviate.Client(
+        url="http://localhost:8080",
+        additional_headers=additional_headers
+    )
     return client
 
 
 def create_simple_schema(client):
     """Create a simple schema for documents."""
     try:
-        # Check if collection exists
-        if client.collections.exists("Document"):
-            print("Document collection already exists")
+        # Check if class exists
+        schema = client.schema.get()
+        existing_classes = [c['class'] for c in schema.get('classes', [])]
+        
+        if "Document" in existing_classes:
+            print("Document class already exists")
             return
         
-        # Create collection
-        client.collections.create(
-            name="Document",
-            description="RNA Lab document chunks",
-            vectorizer_config=weaviate.classes.config.Configure.Vectorizer.text2vec_openai(
-                model="text-embedding-ada-002"
-            ),
-            properties=[
-                weaviate.classes.config.Property(
-                    name="content",
-                    data_type=weaviate.classes.config.DataType.TEXT,
-                    description="Text content of the chunk"
-                ),
-                weaviate.classes.config.Property(
-                    name="title",
-                    data_type=weaviate.classes.config.DataType.TEXT,
-                    description="Document title"
-                ),
-                weaviate.classes.config.Property(
-                    name="author",
-                    data_type=weaviate.classes.config.DataType.TEXT,
-                    description="Document author"
-                ),
-                weaviate.classes.config.Property(
-                    name="doc_type",
-                    data_type=weaviate.classes.config.DataType.TEXT,
-                    description="Type of document"
-                ),
-                weaviate.classes.config.Property(
-                    name="year",
-                    data_type=weaviate.classes.config.DataType.INT,
-                    description="Publication year"
-                ),
-                weaviate.classes.config.Property(
-                    name="document_id",
-                    data_type=weaviate.classes.config.DataType.INT,
-                    description="Database document ID"
-                ),
-                weaviate.classes.config.Property(
-                    name="chunk_index",
-                    data_type=weaviate.classes.config.DataType.INT,
-                    description="Chunk index within document"
-                )
+        # Create class
+        document_class = {
+            "class": "Document",
+            "description": "RNA Lab document chunks",
+            "vectorizer": "text2vec-openai",
+            "moduleConfig": {
+                "text2vec-openai": {
+                    "model": "ada",
+                    "modelVersion": "002", 
+                    "type": "text"
+                }
+            },
+            "properties": [
+                {
+                    "name": "content",
+                    "dataType": ["text"],
+                    "description": "Text content of the chunk"
+                },
+                {
+                    "name": "title",
+                    "dataType": ["text"],
+                    "description": "Document title"
+                },
+                {
+                    "name": "author",
+                    "dataType": ["text"],
+                    "description": "Document author"
+                },
+                {
+                    "name": "doc_type",
+                    "dataType": ["text"],
+                    "description": "Type of document"
+                },
+                {
+                    "name": "year",
+                    "dataType": ["int"],
+                    "description": "Publication year"
+                },
+                {
+                    "name": "document_id",
+                    "dataType": ["int"],
+                    "description": "Database document ID"
+                },
+                {
+                    "name": "chunk_index",
+                    "dataType": ["int"],
+                    "description": "Chunk index within document"
+                }
             ]
-        )
-        print("Created Document collection")
+        }
+        
+        client.schema.create_class(document_class)
+        print("Created Document class")
     except Exception as e:
         print(f"Error creating schema: {e}")
 
@@ -146,13 +163,11 @@ def ingest_document(pdf_path, author, year, doc_type="paper"):
     print(f"Created {len(chunks)} chunks")
     
     # Add to Weaviate
-    collection = client.collections.get("Document")
-    
-    for i, chunk in enumerate(chunks):
-        try:
-            # Create object
-            collection.data.insert(
-                properties={
+    with client.batch() as batch:
+        for i, chunk in enumerate(chunks):
+            try:
+                # Create object
+                data_object = {
                     "content": chunk,
                     "title": document.title,
                     "author": document.author,
@@ -161,16 +176,19 @@ def ingest_document(pdf_path, author, year, doc_type="paper"):
                     "document_id": document.id,
                     "chunk_index": i
                 }
-            )
-            
-            if (i + 1) % 5 == 0:
-                print(f"  Added {i + 1} chunks...")
                 
-        except Exception as e:
-            print(f"Error adding chunk {i}: {e}")
-            continue
+                batch.add_data_object(
+                    data_object=data_object,
+                    class_name="Document"
+                )
+                
+                if (i + 1) % 5 == 0:
+                    print(f"  Added {i + 1} chunks...")
+                    
+            except Exception as e:
+                print(f"Error adding chunk {i}: {e}")
+                continue
     
-    client.close()
     print(f"Successfully ingested: {title}")
     return True
 

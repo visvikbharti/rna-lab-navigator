@@ -8,7 +8,7 @@ import {
   CheckCircleIcon,
   LockClosedIcon,
   CalendarIcon,
-  ActivityIcon
+  ClockIcon
 } from '@heroicons/react/24/outline';
 import { useAuth } from '../../contexts/AuthContext';
 import axios from 'axios';
@@ -79,7 +79,7 @@ const AdminDashboard = () => {
         'ACCOUNT_LOCKED': { label: 'Accounts Locked', icon: LockClosedIcon, color: 'text-red-600' },
         'ACCOUNT_UNLOCKED': { label: 'Accounts Unlocked', icon: LockClosedIcon, color: 'text-green-600' },
       };
-      return actionMap[action] || { label: action, icon: ActivityIcon, color: 'text-gray-600' };
+      return actionMap[action] || { label: action, icon: ClockIcon, color: 'text-gray-600' };
     };
 
     const details = getActionDetails(action);
