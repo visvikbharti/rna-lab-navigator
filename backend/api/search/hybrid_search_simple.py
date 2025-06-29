@@ -6,7 +6,7 @@ import numpy as np
 from typing import List, Dict, Any, Tuple
 from sklearn.preprocessing import normalize
 from sklearn.feature_extraction.text import TfidfVectorizer
-import openai
+from openai import OpenAI
 from django.conf import settings
 import pickle
 import os
@@ -292,7 +292,8 @@ class LocalEmbeddingModel:
         """Get embedding for text."""
         try:
             # Try OpenAI first
-            response = openai.embeddings.create(
+            client = OpenAI(api_key=settings.OPENAI_API_KEY)
+            response = client.embeddings.create(
                 model="text-embedding-ada-002",
                 input=text[:8000]
             )

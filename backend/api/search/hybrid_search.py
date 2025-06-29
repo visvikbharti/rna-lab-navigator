@@ -7,7 +7,7 @@ from typing import List, Dict, Any, Tuple
 from rank_bm25 import BM25Okapi
 import faiss
 from sklearn.preprocessing import normalize
-import openai
+from openai import OpenAI
 from django.conf import settings
 import pickle
 import os
@@ -314,7 +314,8 @@ class HybridSearchEngine:
     def _get_embedding(self, text: str) -> np.ndarray:
         """Get embedding for text using OpenAI."""
         try:
-            response = openai.embeddings.create(
+            client = OpenAI(api_key=settings.OPENAI_API_KEY)
+            response = client.embeddings.create(
                 model="text-embedding-ada-002",
                 input=text[:8000]
             )
@@ -397,7 +398,8 @@ class LocalEmbeddingModel:
         else:
             # Fall back to OpenAI
             try:
-                response = openai.embeddings.create(
+                client = OpenAI(api_key=settings.OPENAI_API_KEY)
+                response = client.embeddings.create(
                     model="text-embedding-ada-002",
                     input=text[:8000]
                 )

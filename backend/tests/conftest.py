@@ -61,7 +61,7 @@ def mock_openai():
         mock_client = mock_openai.return_value
         
         # Mock chat completion
-        mock_chat = mock_client.chat
+        mock_chat = mock_client.chat.completions
         mock_chat.create.return_value.choices = [
             type('obj', (object,), {
                 'message': type('obj', (object,), {

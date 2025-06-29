@@ -56,8 +56,8 @@ def benchmark_client():
 def mock_dependencies():
     """Mock external dependencies for consistent benchmarking."""
     with patch('api.ingestion.embeddings_utils.search_weaviate') as mock_search, \
-         patch('openai.Embedding.create') as mock_embed, \
-         patch('openai.ChatCompletion.create') as mock_chat:
+         patch('openai.embeddings.create') as mock_embed, \
+         patch('openai.chat.completions.create') as mock_chat:
         
         # Mock search results
         mock_search.return_value = [

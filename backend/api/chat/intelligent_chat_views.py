@@ -6,7 +6,7 @@ This can be deployed TODAY to make the chat more intelligent
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
 from .views import ChatSessionViewSet
-import openai
+from openai import OpenAI
 from django.conf import settings
 
 # This prompt transforms the AI into a research partner
@@ -97,7 +97,8 @@ class IntelligentChatViewSet(ChatSessionViewSet):
                 {"role": "user", "content": context}
             ]
             
-            response = openai.ChatCompletion.create(
+            client = OpenAI(api_key=settings.OPENAI_API_KEY)
+            response = client.chat.completions.create(
                 model="gpt-4",
                 messages=messages,
                 temperature=0.7,
@@ -188,7 +189,8 @@ def chat_hypothesis_generator(request):
     
     # Generate hypotheses
     try:
-        response = openai.ChatCompletion.create(
+        client = OpenAI(api_key=settings.OPENAI_API_KEY)
+        response = client.chat.completions.create(
             model="gpt-4",
             messages=[
                 {"role": "system", "content": "You are a creative scientist who generates novel but testable hypotheses."},

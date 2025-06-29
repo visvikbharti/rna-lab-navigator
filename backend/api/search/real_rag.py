@@ -4,7 +4,7 @@ Real RAG implementation using OpenAI and simple vector storage.
 
 import os
 import json
-import openai
+from openai import OpenAI
 import numpy as np
 from sklearn.metrics.pairwise import cosine_similarity
 from django.conf import settings
@@ -144,7 +144,8 @@ class SimpleVectorStore:
     def get_embedding(self, text):
         """Get OpenAI embedding for text."""
         try:
-            response = openai.embeddings.create(
+            client = OpenAI(api_key=settings.OPENAI_API_KEY)
+            response = client.embeddings.create(
                 model="text-embedding-ada-002",
                 input=text[:8000]  # Limit text length
             )
@@ -458,7 +459,8 @@ Instructions:
 Remember: You're not just answering questions - you're actively helping design the next experiment!"""
     
     try:
-        response = openai.chat.completions.create(
+        client = OpenAI(api_key=settings.OPENAI_API_KEY)
+        response = client.chat.completions.create(
             model=settings.OPENAI_MODEL,
             messages=[
                 {"role": "system", "content": "You are an expert RNA biology research assistant with deep knowledge of molecular biology, CRISPR technology, and laboratory techniques. Provide comprehensive, practical answers that help researchers solve real problems."},

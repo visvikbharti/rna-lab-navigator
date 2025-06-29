@@ -10,28 +10,29 @@ import PrivateRoute from './components/auth/PrivateRoute';
 import UserProfile from './components/auth/UserProfile';
 import TermsAcceptance from './components/auth/TermsAcceptance';
 import UserMenu from './components/auth/UserMenu';
-// import EnhancedSearchInterface from './components/EnhancedSearchInterface';
+import EnhancedSearchInterface from './components/EnhancedSearchInterface';
 import FilterChips from './components/FilterChips';
-// import ProtocolUploader from './components/ProtocolUploader';
 import DocumentUploader from './components/DocumentUploader';
-// import GapExplorer from './components/GapExplorer';
-// import CrossPaperInsights from './components/CrossPaperInsights';
-// import HypothesisExplorer from './components/HypothesisExplorer';
-// import ProtocolBuilder from './components/ProtocolBuilder';
-// import ExperimentMapper from './components/ExperimentMapper';
-// import KnowledgeGraphExplorer from './components/KnowledgeGraphExplorer';
-// import { FeedbackAnalyticsDashboard } from './components/feedback';
-// import SearchQualityDashboard from './components/SearchQualityDashboard';
-// import SecurityAuditDashboard from './components/SecurityAuditDashboard';
-// import SimpleSearch from './SimpleSearch';
-// import { AnimationProvider } from './contexts/AnimationContext';
+import { 
+  HypothesisExplorer, 
+  ProtocolBuilder, 
+  GapExplorer,
+  CrossPaperInsights,
+  KnowledgeGraphExplorer,
+  ExperimentMapper,
+  MultiAgentAnalysis,
+  ProtocolDesigner,
+  FeedbackAnalyticsDashboard,
+  SecurityAuditDashboard,
+  SearchQualityDashboard
+} from './components/placeholders';
+import SimpleSearch from './SimpleSearch';
+import { AnimationProvider } from './contexts/AnimationContext';
 import { DarkModeProvider } from './contexts/DarkModeContext';
 import DarkModeToggle from './components/DarkModeToggle';
-// import { ParticleBackground, FloatingOrbs, GlassCard, GradientText } from './components/enhanced';
+import { ParticleBackground, FloatingOrbs, GlassCard, GradientText } from './components/enhanced';
 import { MagnifyingGlassIcon, BeakerIcon, DocumentTextIcon, ChartBarIcon, ShieldCheckIcon, MapIcon, CloudArrowUpIcon, SparklesIcon, LightBulbIcon, LinkIcon, Bars3Icon, XMarkIcon, CubeTransparentIcon, UsersIcon } from '@heroicons/react/24/outline';
-// import MultiAgentAnalysis from './components/MultiAgentAnalysis';
-// import ProtocolDesigner from './components/ProtocolDesigner';
-// import TestRoutes from './TestRoutes';
+import TestRoutes from './TestRoutes';
 import ChatInterface from './components/ChatInterface';
 import AdminDashboard from './components/admin/AdminDashboard';
 import UserManagement from './components/admin/UserManagement';

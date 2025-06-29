@@ -28,7 +28,7 @@ def test_full_rag_pipeline(authenticated_client, mock_openai, mock_weaviate, sam
     
     # Verify the proper components were called
     assert mock_weaviate.query.get.called  # Vector search was performed
-    assert mock_openai.chat.create.called  # LLM was called for answer generation
+    assert mock_openai.chat.completions.create.called  # LLM was called for answer generation
 
 
 @pytest.mark.django_db
@@ -139,7 +139,7 @@ def test_citation_requirement(authenticated_client, mock_openai, mock_weaviate, 
     url = reverse('query')
     
     # First test: LLM includes citations
-    mock_openai.chat.create.return_value.choices = [
+    mock_openai.chat.completions.create.return_value.choices = [
         type('obj', (object,), {
             'message': type('obj', (object,), {
                 'content': 'RNA is important in cellular processes. [Source 1]'
@@ -152,7 +152,7 @@ def test_citation_requirement(authenticated_client, mock_openai, mock_weaviate, 
     assert response.status_code == status.HTTP_200_OK
     
     # Second test: LLM does not include citations
-    mock_openai.chat.create.return_value.choices = [
+    mock_openai.chat.completions.create.return_value.choices = [
         type('obj', (object,), {
             'message': type('obj', (object,), {
                 'content': 'RNA is important in cellular processes.'  # No citation

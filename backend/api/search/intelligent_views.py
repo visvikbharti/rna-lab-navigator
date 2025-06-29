@@ -6,11 +6,8 @@ This demonstrates how to transform simple Q&A into active research assistance
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
 from django.conf import settings
-import openai
+from openai import OpenAI
 from .views import search_papers
-
-# Configure OpenAI
-openai.api_key = settings.OPENAI_API_KEY
 
 RESEARCH_PARTNER_PROMPT = """
 You are a senior RNA biologist helping a junior researcher. You have deep knowledge of:
@@ -62,7 +59,8 @@ def intelligent_query(request):
             {"role": "user", "content": context + "\n\nNow provide research intelligence on this topic."}
         ]
         
-        response = openai.ChatCompletion.create(
+        client = OpenAI(api_key=settings.OPENAI_API_KEY)
+        response = client.chat.completions.create(
             model="gpt-4",
             messages=messages,
             temperature=0.7,
@@ -165,7 +163,8 @@ def design_experiment(request):
             {"role": "user", "content": design_prompt}
         ]
         
-        response = openai.ChatCompletion.create(
+        client = OpenAI(api_key=settings.OPENAI_API_KEY)
+        response = client.chat.completions.create(
             model="gpt-4",
             messages=messages,
             temperature=0.6,
@@ -249,7 +248,8 @@ def optimize_protocol(request):
             {"role": "user", "content": optimization_prompt}
         ]
         
-        response = openai.ChatCompletion.create(
+        client = OpenAI(api_key=settings.OPENAI_API_KEY)
+        response = client.chat.completions.create(
             model="gpt-4",
             messages=messages,
             temperature=0.6,
@@ -323,7 +323,8 @@ def generate_hypotheses(request):
             {"role": "user", "content": hypothesis_prompt}
         ]
         
-        response = openai.ChatCompletion.create(
+        client = OpenAI(api_key=settings.OPENAI_API_KEY)
+        response = client.chat.completions.create(
             model="gpt-4",
             messages=messages,
             temperature=0.8,

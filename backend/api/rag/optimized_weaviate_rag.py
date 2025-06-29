@@ -9,7 +9,7 @@ import weaviate
 from typing import List, Dict, Any, Optional
 from django.conf import settings
 from django.core.cache import cache
-import openai
+from openai import OpenAI
 from concurrent.futures import ThreadPoolExecutor, as_completed
 import asyncio
 
@@ -25,7 +25,7 @@ class OptimizedWeaviateRAG:
     
     def __init__(self):
         # Initialize components
-        openai.api_key = settings.OPENAI_API_KEY
+        self.openai_client = OpenAI(api_key=settings.OPENAI_API_KEY)
         self.client = weaviate.Client("http://localhost:8080")
         
         # Performance optimizer
@@ -133,7 +133,7 @@ class OptimizedWeaviateRAG:
         
         # Compute embedding
         try:
-            response = openai.Embedding.create(
+            response = self.openai_client.embeddings.create(
                 model="text-embedding-3-small",
                 input=question
             )
@@ -167,7 +167,7 @@ Answer:"""
 
         try:
             # Use faster model settings
-            response = openai.ChatCompletion.create(
+            response = self.openai_client.chat.completions.create(
                 model="gpt-4o",
                 messages=[
                     {"role": "system", "content": "You are a research assistant. Answer concisely and accurately."},

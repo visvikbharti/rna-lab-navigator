@@ -9,7 +9,7 @@ import weaviate
 from typing import List, Dict, Any, Optional
 from django.conf import settings
 from django.core.cache import cache
-import openai
+from openai import OpenAI
 
 
 class WeaviateProductionRAG:
@@ -17,7 +17,7 @@ class WeaviateProductionRAG:
     
     def __init__(self):
         # Initialize OpenAI
-        openai.api_key = settings.OPENAI_API_KEY
+        self.client = OpenAI(api_key=settings.OPENAI_API_KEY)
         self.cache_ttl = getattr(settings, 'PRODUCTION_RAG_CACHE_TTL', 3600)
         self.max_context_chars = 10000  # Reduced for faster processing
         self.top_k = 4  # Reduced from 5 for faster retrieval
@@ -169,7 +169,7 @@ Instructions:
 Remember: Be helpful, specific, and practical for lab members."""
 
         try:
-            response = openai.ChatCompletion.create(
+            response = self.client.chat.completions.create(
                 model="gpt-4o",  # Use gpt-4o for fast responses
                 messages=[
                     {"role": "system", "content": "You are an expert RNA biology research assistant. Be concise."},

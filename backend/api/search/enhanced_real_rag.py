@@ -4,7 +4,7 @@ Enhanced RAG implementation using hybrid search and advanced PDF processing.
 
 import os
 import json
-import openai
+from openai import OpenAI
 import numpy as np
 from django.conf import settings
 from api.models import Document, QueryHistory
@@ -205,7 +205,8 @@ class EnhancedRAGSystem:
         prompt = self._create_enhanced_prompt(query, context, search_results)
         
         try:
-            response = openai.chat.completions.create(
+            client = OpenAI(api_key=settings.OPENAI_API_KEY)
+            response = client.chat.completions.create(
                 model=settings.OPENAI_MODEL,
                 messages=[
                     {"role": "system", "content": self._get_system_prompt()},
@@ -316,7 +317,8 @@ class EnhancedRAGSystem:
     def _get_openai_embedding(self, text: str) -> np.ndarray:
         """Get OpenAI embedding."""
         try:
-            response = openai.embeddings.create(
+            client = OpenAI(api_key=settings.OPENAI_API_KEY)
+            response = client.embeddings.create(
                 model="text-embedding-ada-002",
                 input=text[:8000]
             )
