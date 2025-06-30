@@ -94,16 +94,21 @@ class AnalyticsMiddleware(MiddlewareMixin):
             metadata = self._extract_metadata(request, response)
             
             # Create the activity log
-            UserActivityLog.objects.create(
-                user=request.user if not isinstance(request.user, AnonymousUser) else None,
-                activity_type=activity_type,
-                ip_address=self._get_client_ip(request),
-                session_id=session_id,
-                resource_id=resource_id,
-                resource_type=resource_type,
-                status='success' if 200 <= response.status_code < 400 else 'failure',
-                metadata=metadata
-            )
+            try:
+                UserActivityLog.objects.create(
+                    user=request.user if not isinstance(request.user, AnonymousUser) else None,
+                    activity_type=activity_type,
+                    ip_address=self._get_client_ip(request),
+                    session_id=session_id,
+                    resource_id=resource_id,
+                    resource_type=resource_type,
+                    status='success' if 200 <= response.status_code < 400 else 'failure',
+                    metadata=metadata
+                )
+            except Exception as e:
+                # Temporarily ignore analytics errors to prevent app failures
+                if settings.DEBUG:
+                    print(f"Analytics error: {e}")
             
             # Record security-relevant events to the audit log if needed
             if self._is_security_relevant(request, response):
@@ -252,17 +257,22 @@ class AnalyticsMiddleware(MiddlewareMixin):
             severity = 'info'
         
         # Create the audit event
-        AuditEvent.objects.create(
-            event_type=event_type,
-            user=request.user if not isinstance(request.user, AnonymousUser) else None,
-            ip_address=self._get_client_ip(request),
-            description=f"{request.method} {request.path} - {response.status_code}",
-            severity=severity,
-            details={
-                'path': request.path,
-                'method': request.method,
-                'status_code': response.status_code,
-                'user_agent': request.META.get('HTTP_USER_AGENT', ''),
-                'referer': request.META.get('HTTP_REFERER', ''),
-            }
-        )
+        try:
+            AuditEvent.objects.create(
+                event_type=event_type,
+                user=request.user if not isinstance(request.user, AnonymousUser) else None,
+                ip_address=self._get_client_ip(request),
+                description=f"{request.method} {request.path} - {response.status_code}",
+                severity=severity,
+                details={
+                    'path': request.path,
+                    'method': request.method,
+                    'status_code': response.status_code,
+                    'user_agent': request.META.get('HTTP_USER_AGENT', ''),
+                    'referer': request.META.get('HTTP_REFERER', ''),
+                }
+            )
+        except Exception as e:
+            # Temporarily ignore audit errors to prevent app failures
+            if settings.DEBUG:
+                print(f"Audit error: {e}")

@@ -16,6 +16,7 @@ import ReactMarkdown from 'react-markdown';
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
 import { nightOwl } from 'react-syntax-highlighter/dist/esm/styles/prism';
 import { useAuth } from '../contexts/AuthContext';
+import UserMenu from './auth/UserMenu';
 
 const ChatInterface = () => {
   const [sessions, setSessions] = useState([]);
@@ -170,11 +171,11 @@ const ChatInterface = () => {
     if (!metadata?.sources?.length) return null;
     
     return (
-      <div className="mt-4 p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
-        <h4 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Sources:</h4>
+      <div className="mt-4 p-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg border border-gray-200 dark:border-gray-600">
+        <h4 className="text-sm font-medium text-gray-800 dark:text-gray-100 mb-2">Sources:</h4>
         <div className="space-y-1">
           {metadata.sources.map((source, idx) => (
-            <div key={idx} className="flex items-start text-xs text-gray-600 dark:text-gray-400">
+            <div key={idx} className="flex items-start text-xs text-gray-700 dark:text-gray-200">
               <DocumentTextIcon className="w-4 h-4 mr-1 flex-shrink-0 mt-0.5" />
               <span>
                 {source.title} by {source.author} ({source.year})
@@ -185,7 +186,7 @@ const ChatInterface = () => {
           ))}
         </div>
         {metadata.confidence_score && (
-          <div className="mt-2 text-xs text-gray-500 dark:text-gray-400">
+          <div className="mt-2 text-xs text-gray-600 dark:text-gray-300">
             Confidence: {(metadata.confidence_score * 100).toFixed(0)}%
           </div>
         )}
@@ -198,7 +199,7 @@ const ChatInterface = () => {
     
     return (
       <div className="mt-4 pt-4 border-t border-gray-200 dark:border-gray-700">
-        <p className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-3 flex items-center gap-2">
+        <p className="text-sm font-medium text-gray-800 dark:text-gray-100 mb-3 flex items-center gap-2">
           <SparklesIcon className="w-4 h-4 text-blue-500" />
           Suggested follow-up questions:
         </p>
@@ -231,7 +232,7 @@ const ChatInterface = () => {
   };
 
   return (
-    <div className="flex h-screen bg-gray-50 dark:bg-gray-900">
+    <div className="flex h-screen bg-gray-100 dark:bg-gray-900">
       {/* Sessions Sidebar */}
       <AnimatePresence>
         {showSessions && (
@@ -316,20 +317,23 @@ const ChatInterface = () => {
             </h1>
           </div>
           
-          <div className="text-sm text-gray-500 dark:text-gray-400">
-            AI-powered research assistant
+          <div className="flex items-center gap-4">
+            <div className="text-sm text-gray-500 dark:text-gray-400">
+              AI-powered research assistant
+            </div>
+            <UserMenu />
           </div>
         </div>
 
         {/* Messages Area */}
-        <div className="flex-1 overflow-y-auto px-6 py-4">
+        <div className="flex-1 overflow-y-auto px-6 py-4 bg-gray-50 dark:bg-gray-900">
           {messages.length === 0 ? (
             <div className="max-w-3xl mx-auto text-center py-12">
               <SparklesIcon className="w-12 h-12 mx-auto text-blue-500 mb-4" />
-              <h2 className="text-2xl font-semibold text-gray-100 mb-2">
+              <h2 className="text-2xl font-semibold text-gray-800 dark:text-gray-100 mb-2">
                 Welcome to RNA Lab Navigator
               </h2>
-              <p className="text-gray-300 mb-8">
+              <p className="text-gray-600 dark:text-gray-300 mb-8">
                 Ask me anything about research papers, protocols, and theses from Dr. Chakraborty's lab.
               </p>
               
@@ -344,7 +348,7 @@ const ChatInterface = () => {
                   <button
                     key={idx}
                     onClick={() => setInputMessage(query)}
-                    className="p-4 bg-gray-800 border border-gray-600 rounded-lg hover:border-blue-500 transition-colors text-sm text-gray-200 hover:text-white"
+                    className="p-4 bg-gray-100 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg hover:border-blue-500 transition-colors text-sm text-gray-700 dark:text-gray-100 hover:text-gray-900 dark:hover:text-white"
                   >
                     {query}
                   </button>
@@ -374,7 +378,7 @@ const ChatInterface = () => {
                     <div className={`inline-block p-4 rounded-2xl ${
                       message.role === 'user'
                         ? 'bg-blue-600 text-white'
-                        : 'bg-white dark:bg-gray-800 text-gray-900 dark:text-white border border-gray-200 dark:border-gray-700'
+                        : 'bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-100 border border-gray-200 dark:border-gray-700'
                     }`}>
                       {message.role === 'assistant' ? (
                         <>
@@ -398,7 +402,7 @@ const ChatInterface = () => {
                                 );
                               }
                             }}
-                            className="prose prose-sm dark:prose-invert max-w-none"
+                            className="prose prose-sm dark:prose-invert max-w-none [&>p]:text-gray-800 dark:[&>p]:text-gray-100 [&>h1]:text-gray-900 dark:[&>h1]:text-white [&>h2]:text-gray-900 dark:[&>h2]:text-white [&>h3]:text-gray-900 dark:[&>h3]:text-white [&>strong]:text-gray-900 dark:[&>strong]:text-white [&>a]:text-blue-600 dark:[&>a]:text-blue-400 [&>ul]:text-gray-800 dark:[&>ul]:text-gray-100 [&>ol]:text-gray-800 dark:[&>ol]:text-gray-100 [&>li]:text-gray-800 dark:[&>li]:text-gray-100"
                           >
                             {message.content}
                           </ReactMarkdown>
@@ -460,7 +464,7 @@ const ChatInterface = () => {
                 if (lastAssistantMessage?.metadata?.suggestions?.length > 0) {
                   return (
                     <div className="flex gap-2 flex-wrap">
-                      <p className="text-xs text-gray-500 dark:text-gray-400 w-full mb-1">Quick actions:</p>
+                      <p className="text-xs text-gray-600 dark:text-gray-300 w-full mb-1">Quick actions:</p>
                       {lastAssistantMessage.metadata.suggestions.slice(0, 3).map((suggestion, idx) => (
                         <button
                           key={idx}
@@ -481,7 +485,7 @@ const ChatInterface = () => {
                   <div className="flex gap-2 flex-wrap">
                     <button
                       onClick={() => setInputMessage('Summarize the key findings')}
-                      className="px-3 py-1 text-xs bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-full hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors"
+                      className="px-3 py-1 text-xs bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-100 rounded-full hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors"
                     >
                       📊 Summarize findings
                     </button>
