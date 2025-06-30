@@ -35,7 +35,7 @@ SECRET_KEY = os.getenv("SECRET_KEY", "dev-key-x9w2m5p7q8r3t6y9u1i4o7p0a3s6d9f2g5
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = os.getenv("DEBUG", "False") == "True"
 
-ALLOWED_HOSTS = ["localhost", "127.0.0.1"]
+ALLOWED_HOSTS = ["localhost", "127.0.0.1", ".ngrok-free.app", ".ngrok.io", ".vercel.app"]
 if os.getenv("ALLOWED_HOSTS"):
     ALLOWED_HOSTS += os.getenv("ALLOWED_HOSTS").split(",")
 
