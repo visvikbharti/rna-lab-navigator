@@ -18,7 +18,6 @@ python-pptx==0.6.23
 python-magic==0.4.27
 opencv-python==4.8.1.78
 aiofiles==23.2.1
-sentence-transformers==2.2.2
 openai==1.12.0
 transformers==4.38.1
 pytest==7.4.3
@@ -48,8 +47,9 @@ langchain==0.1.6
 langchain-community==0.0.20
 
 # Embeddings
-sentence-transformers==2.2.2
+sentence-transformers==2.5.1
 torch==2.1.2
+huggingface-hub==0.20.3
 
 # Document processing
 unstructured==0.11.8
