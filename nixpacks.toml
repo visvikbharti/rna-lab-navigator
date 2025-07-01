@@ -2,7 +2,7 @@
 nixPkgs = ["python311", "postgresql", "gcc"]
 
 [phases.install]
-cmds = ["cd backend && pip install -r requirements.txt"]
+cmds = ["cd backend && python -m pip install -r requirements.txt"]
 
 [start]
 cmd = "cd backend && python manage.py migrate && python manage.py collectstatic --noinput && gunicorn rna_backend.wsgi:application --bind 0.0.0.0:$PORT"
