@@ -1,0 +1,58 @@
+numpy<2
+Django==4.2.10
+djangorestframework==3.14.0
+djangorestframework-simplejwt==5.3.0
+psycopg2-binary==2.9.9
+celery==5.3.6
+redis==5.0.1
+django-redis==5.4.0
+django-axes==6.1.1
+weaviate-client==3.25.2
+python-dotenv==1.0.0
+Pillow==10.1.0
+pdfplumber==0.10.3
+PyMuPDF==1.23.8
+pytesseract==0.3.10
+python-docx==1.1.0
+python-pptx==0.6.23
+python-magic==0.4.27
+opencv-python==4.8.1.78
+aiofiles==23.2.1
+sentence-transformers==2.2.2
+openai==1.12.0
+transformers==4.38.1
+pytest==7.4.3
+pytest-django==4.7.0
+black==23.11.0
+isort==5.12.0
+django-cors-headers==4.3.1
+gunicorn==21.2.0
+dj-database-url==2.1.0
+channels==4.0.0
+channels-redis==4.1.0
+daphne==4.0.0
+hiredis==2.3.2
+rich==13.7.1
+
+# Advanced PDF processing
+pypdf==3.17.4
+pdf2image==1.16.3
+camelot-py[cv]==0.11.0
+tabula-py==2.9.0
+
+# Advanced search and indexing
+faiss-cpu==1.7.4
+rank-bm25==0.2.2
+langchain==0.1.6
+langchain-community==0.0.13
+
+# Embeddings
+sentence-transformers==2.2.2
+torch==2.1.2
+
+# Document processing
+unstructured==0.11.8
+pymupdf==1.23.8
+
+# Paper monitoring
+feedparser==6.0.10

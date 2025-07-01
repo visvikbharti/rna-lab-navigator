@@ -1,1 +1,1 @@
-web: cd backend && gunicorn rna_backend.wsgi:application --bind 0.0.0.0:$PORT
+web: cd backend && python manage.py migrate && python manage.py collectstatic --noinput && gunicorn rna_backend.wsgi:application --bind 0.0.0.0:$PORT
