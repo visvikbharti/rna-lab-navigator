@@ -44,7 +44,7 @@ tabula-py==2.9.0
 faiss-cpu==1.7.4
 rank-bm25==0.2.2
 langchain==0.1.6
-langchain-community==0.0.13
+langchain-community==0.0.20
 
 # Embeddings
 sentence-transformers==2.2.2
