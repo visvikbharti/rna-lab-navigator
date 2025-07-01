@@ -26,6 +26,7 @@ pytest-django==4.7.0
 black==23.11.0
 isort==5.12.0
 django-cors-headers==4.3.1
+django-filter==23.5
 gunicorn==21.2.0
 dj-database-url==2.1.0
 channels==4.0.0
