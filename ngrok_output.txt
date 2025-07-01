@@ -1,0 +1,14 @@
+t=2025-06-30T22:20:28+0530 lvl=info msg="no configuration paths supplied"
+t=2025-06-30T22:20:28+0530 lvl=info msg="using configuration at default config path" path="/Users/vishalbharti/Library/Application Support/ngrok/ngrok.yml"
+t=2025-06-30T22:20:28+0530 lvl=info msg="open config file" path="/Users/vishalbharti/Library/Application Support/ngrok/ngrok.yml" err=nil
+t=2025-06-30T22:20:28+0530 lvl=info msg="starting web service" obj=web addr=127.0.0.1:4040 allow_hosts=[]
+t=2025-06-30T22:20:29+0530 lvl=eror msg="failed to reconnect session" obj=tunnels.session err="failed to send authentication request: tls: failed to verify certificate: x509: certificate signed by unknown authority"
+t=2025-06-30T22:20:29+0530 lvl=eror msg="failed to reconnect session" obj=tunnels.session err="failed to send authentication request: tls: failed to verify certificate: x509: certificate signed by unknown authority"
+t=2025-06-30T22:20:30+0530 lvl=eror msg="failed to reconnect session" obj=tunnels.session err="failed to send authentication request: tls: failed to verify certificate: x509: certificate signed by unknown authority"
+t=2025-06-30T22:20:31+0530 lvl=info msg=start pg=/grpc/agent.Web/State id=c496e65bde97098e
+t=2025-06-30T22:20:31+0530 lvl=info msg=start pg=/grpc/agent.Web/State id=41a5c6d12b9074ec
+t=2025-06-30T22:20:32+0530 lvl=eror msg="failed to reconnect session" obj=tunnels.session err="failed to send authentication request: tls: failed to verify certificate: x509: certificate signed by unknown authority"
+t=2025-06-30T22:20:36+0530 lvl=eror msg="failed to reconnect session" obj=tunnels.session err="failed to send authentication request: tls: failed to verify certificate: x509: certificate signed by unknown authority"
+t=2025-06-30T22:20:44+0530 lvl=eror msg="failed to reconnect session" obj=tunnels.session err="failed to send authentication request: tls: failed to verify certificate: x509: certificate signed by unknown authority"
+t=2025-06-30T22:20:55+0530 lvl=info msg="received stop request" obj=app stopReq="{err:<nil> restart:false}"
+t=2025-06-30T22:20:55+0530 lvl=info msg="session closing" obj=tunnels.session err=nil

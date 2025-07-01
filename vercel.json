@@ -2,7 +2,18 @@
   "buildCommand": "cd frontend && npm install && npm run build",
   "outputDirectory": "frontend/dist",
   "installCommand": "cd frontend && npm install",
-  "framework": null,
+  "framework": "vite",
+  "devCommand": "cd frontend && npm run dev",
+  "env": {
+    "VITE_API_URL": "@api_url",
+    "VITE_APP_NAME": "RNA Lab Navigator",
+    "VITE_ENV": "production"
+  },
+  "build": {
+    "env": {
+      "VITE_API_URL": "@api_url"
+    }
+  },
   "rewrites": [
     {
       "source": "/(.*)",
