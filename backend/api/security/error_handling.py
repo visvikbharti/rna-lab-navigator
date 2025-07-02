@@ -184,8 +184,9 @@ class SecurityMiddleware:
         if request.method == 'OPTIONS':
             return self.get_response(request)
         
-        # Allow auth endpoints to pass through without security checks
-        if request.path.startswith('/api/auth/') or request.path.startswith('/auth-test/'):
+        # Allow health check and auth endpoints to pass through without security checks
+        bypass_paths = ['/health', '/api/health', '/api/auth/', '/auth-test/', '/cors-test/', '/ready/']
+        if any(request.path.startswith(path) for path in bypass_paths):
             return self.get_response(request)
             
         try:
