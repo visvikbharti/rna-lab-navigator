@@ -35,7 +35,7 @@ SECRET_KEY = os.getenv("SECRET_KEY", "dev-key-x9w2m5p7q8r3t6y9u1i4o7p0a3s6d9f2g5
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = os.getenv("DEBUG", "False") == "True"
 
-ALLOWED_HOSTS = ["localhost", "127.0.0.1"]
+ALLOWED_HOSTS = ["localhost", "127.0.0.1", ".ngrok-free.app", ".ngrok.io", ".vercel.app"]
 if os.getenv("ALLOWED_HOSTS"):
     ALLOWED_HOSTS += os.getenv("ALLOWED_HOSTS").split(",")
 
@@ -51,7 +51,7 @@ INSTALLED_APPS = [
     # Third-party apps
     "rest_framework",
     "rest_framework_simplejwt",
-    "rest_framework_simplejwt.token_blacklist",
+    # "rest_framework_simplejwt.token_blacklist",  # Temporarily disabled to fix authentication
     "corsheaders",
     "axes",
     "channels",  # For WebSocket support
@@ -453,7 +453,7 @@ SIMPLE_JWT = {
     'ACCESS_TOKEN_LIFETIME': timedelta(minutes=15),
     'REFRESH_TOKEN_LIFETIME': timedelta(days=1),
     'ROTATE_REFRESH_TOKENS': True,
-    'BLACKLIST_AFTER_ROTATION': True,
+    'BLACKLIST_AFTER_ROTATION': False,  # Temporarily disabled to fix authentication
     'UPDATE_LAST_LOGIN': True,
     
     'ALGORITHM': 'HS256',

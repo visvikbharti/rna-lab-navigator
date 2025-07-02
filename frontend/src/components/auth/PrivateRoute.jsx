@@ -27,7 +27,7 @@ const PrivateRoute = ({ children, requiredRole = null, requiredPermission = null
   }
 
   // Check if terms are accepted
-  if (!user.terms_accepted && location.pathname !== '/accept-terms') {
+  if (!user.terms_accepted_at && location.pathname !== '/accept-terms') {
     return <Navigate to="/accept-terms" replace />;
   }
 

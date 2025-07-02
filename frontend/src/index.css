@@ -30,12 +30,17 @@
     font-family: var(--font-primary);
     line-height: var(--leading-normal);
     font-weight: var(--weight-normal);
-    color: white;
-    background-color: var(--colossal-deep-space, #0A0E27);
+    color: rgb(17 24 39);
+    background-color: rgb(249 250 251);
     font-synthesis: none;
     text-rendering: optimizeLegibility;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
+  }
+  
+  html.dark body {
+    color: rgb(243 244 246);
+    background-color: rgb(17 24 39);
   }
 
   /* Typography scale */

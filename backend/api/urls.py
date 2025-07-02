@@ -1,5 +1,6 @@
 from django.urls import path, include
 from rest_framework.routers import DefaultRouter
+from .simple_auth import simple_login
 
 # For the demo, use simplified views to avoid dependency issues
 from .views_simplified import (
@@ -45,6 +46,7 @@ urlpatterns = [
     
     # Authentication endpoints
     path("auth/", include("api.auth.urls")),
+    path("auth/simple-login/", simple_login, name="simple-login"),
     
     # Analytics endpoints
     path("analytics/", include("api.analytics.urls")),

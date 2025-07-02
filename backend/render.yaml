@@ -1,0 +1,39 @@
+services:
+  - type: web
+    name: rna-lab-navigator-backend
+    runtime: docker
+    dockerfilePath: ./backend/Dockerfile
+    dockerContext: ./backend
+    envVars:
+      - key: DJANGO_SETTINGS_MODULE
+        value: rna_backend.settings_production
+      - key: DATABASE_URL
+        fromDatabase:
+          name: rna-lab-db
+          property: connectionString
+      - key: REDIS_URL
+        fromService:
+          type: redis
+          name: rna-lab-redis
+          property: connectionString
+      - key: OPENAI_API_KEY
+        sync: false  # Set manually in dashboard
+      - key: SECRET_KEY
+        generateValue: true
+      - key: ALLOWED_HOSTS
+        value: ".onrender.com"
+      - key: CORS_ALLOWED_ORIGINS
+        value: "https://rna-lab-navigator.vercel.app"
+    plan: starter  # Or free for testing
+
+databases:
+  - name: rna-lab-db
+    plan: starter  # Or free for testing
+    databaseName: rna_lab_navigator
+    user: rna_lab_user
+
+services:
+  - type: redis
+    name: rna-lab-redis
+    plan: starter  # Or free for testing
+    maxmemoryPolicy: allkeys-lru

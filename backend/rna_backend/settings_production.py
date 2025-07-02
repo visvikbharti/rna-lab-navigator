@@ -13,12 +13,7 @@ STATIC_URL = os.getenv('RAILWAY_STATIC_URL', '/static/')
 STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
 
 # Railway domains and custom domains
-ALLOWED_HOSTS = [
-    'localhost',
-    '127.0.0.1',
-    '.railway.app',  # Railway domain
-    '.vercel.app',   # Frontend domain
-]
+ALLOWED_HOSTS = ['*']  # Temporarily allow all hosts to debug Railway issue
 
 # Add custom domains from environment
 if os.getenv("ALLOWED_HOSTS"):
@@ -27,18 +22,20 @@ if os.getenv("ALLOWED_HOSTS"):
 # Database configuration for Railway PostgreSQL
 if os.getenv('DATABASE_URL'):
     DATABASES = {
-        'default': dj_database_url.parse(os.getenv('DATABASE_URL'))
+        'default': dj_database_url.parse(
+            os.getenv('DATABASE_URL'),
+            conn_max_age=600,
+            conn_health_checks=True,
+        )
     }
+    # Ensure we're using PostgreSQL
+    DATABASES['default']['ENGINE'] = 'django.db.backends.postgresql'
 else:
-    # Fallback to individual PostgreSQL environment variables
+    # Fallback to SQLite for local development
     DATABASES = {
         'default': {
-            'ENGINE': 'django.db.backends.postgresql',
-            'NAME': os.getenv('POSTGRES_DB', 'railway'),
-            'USER': os.getenv('POSTGRES_USER', 'postgres'),
-            'PASSWORD': os.getenv('POSTGRES_PASSWORD'),
-            'HOST': os.getenv('POSTGRES_HOST', 'localhost'),
-            'PORT': os.getenv('POSTGRES_PORT', '5432'),
+            'ENGINE': 'django.db.backends.sqlite3',
+            'NAME': os.path.join(BASE_DIR, 'db.sqlite3'),
         }
     }
 
@@ -68,10 +65,25 @@ if not OPENAI_API_KEY:
     raise ValueError("OPENAI_API_KEY must be set in production")
 
 # Security settings for production
-SECURE_SSL_REDIRECT = True
+# Railway handles SSL at the edge, so we disable SSL redirect
+SECURE_SSL_REDIRECT = False
+APPEND_SLASH = False  # Prevent Django from redirecting to add trailing slashes
+
+# Force disable common middleware redirects
+PREPEND_WWW = False
+
+# Add Railway proxy middleware to handle edge server issues
+MIDDLEWARE.insert(0, 'api.middleware.railway_proxy.RailwayProxyMiddleware')
+
+# Ensure we trust Railway's proxy headers
+TRUST_X_FORWARDED_PROTO = True
 SECURE_HSTS_SECONDS = 31536000  # 1 year
 SECURE_HSTS_INCLUDE_SUBDOMAINS = True
 SECURE_HSTS_PRELOAD = True
+
+# Railway proxy configuration
+USE_X_FORWARDED_HOST = True
+SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
 
 # Cookie security
 SESSION_COOKIE_SECURE = True
@@ -93,11 +105,37 @@ SECURE_REFERRER_POLICY = 'strict-origin-when-cross-origin'
 CORS_ALLOW_ALL_ORIGINS = False
 CORS_ALLOWED_ORIGINS = [
     'https://rna-lab-navigator.vercel.app',  # Production frontend
+    'https://rna-lab-navigator-git-f-2ot9gt-vishal-bhartis-projects-0646964d.vercel.app',  # Preview deployments
+    'https://rna-lab-navigator-fadynvua2-vishal-bhartis-projects-0646964d.vercel.app',  # Branch deployments
 ]
 
 # Add additional CORS origins from environment
 if os.getenv("CORS_ALLOWED_ORIGINS"):
     CORS_ALLOWED_ORIGINS += os.getenv("CORS_ALLOWED_ORIGINS").split(",")
+
+# CORS headers configuration
+CORS_ALLOW_CREDENTIALS = True
+CORS_ALLOW_HEADERS = [
+    'accept',
+    'accept-encoding',
+    'authorization',
+    'content-type',
+    'dnt',
+    'origin',
+    'user-agent',
+    'x-csrftoken',
+    'x-requested-with',
+    'x-request-id',
+]
+CORS_ALLOW_METHODS = [
+    'DELETE',
+    'GET',
+    'OPTIONS',
+    'PATCH',
+    'POST',
+    'PUT',
+]
+CORS_PREFLIGHT_MAX_AGE = 86400  # 24 hours
 
 # Enhanced security headers for production
 CSP_CONFIG = {

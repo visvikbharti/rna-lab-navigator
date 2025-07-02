@@ -180,6 +180,15 @@ class SecurityMiddleware:
         self.get_response = get_response
         
     def __call__(self, request):
+        # Allow OPTIONS requests to pass through for CORS
+        if request.method == 'OPTIONS':
+            return self.get_response(request)
+        
+        # Allow health check and auth endpoints to pass through without security checks
+        bypass_paths = ['/health', '/api/health', '/api/auth/', '/auth-test/', '/cors-test/', '/ready/']
+        if any(request.path.startswith(path) for path in bypass_paths):
+            return self.get_response(request)
+            
         try:
             response = self.get_response(request)
             

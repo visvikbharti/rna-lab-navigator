@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>CORS Test</title>
+</head>
+<body>
+    <h1>RNA Lab Navigator CORS Test</h1>
+    <div id="results"></div>
+
+    <script>
+        const backendUrl = 'https://rna-lab-navigator-production.up.railway.app';
+        const results = document.getElementById('results');
+
+        function log(message) {
+            const p = document.createElement('p');
+            p.textContent = message;
+            results.appendChild(p);
+            console.log(message);
+        }
+
+        async function testEndpoint(path, method = 'GET', body = null) {
+            log(`\nTesting ${method} ${path}...`);
+            
+            try {
+                const options = {
+                    method: method,
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    credentials: 'include',
+                };
+                
+                if (body) {
+                    options.body = JSON.stringify(body);
+                }
+                
+                const response = await fetch(`${backendUrl}${path}`, options);
+                log(`Status: ${response.status} ${response.statusText}`);
+                
+                const data = await response.json();
+                log(`Response: ${JSON.stringify(data, null, 2)}`);
+                
+                return data;
+            } catch (error) {
+                log(`Error: ${error.message}`);
+                return null;
+            }
+        }
+
+        async function runTests() {
+            log('Starting CORS tests...');
+            
+            // Test health endpoint
+            await testEndpoint('/health/');
+            
+            // Test CORS test endpoint
+            await testEndpoint('/cors-test/');
+            
+            // Test auth test endpoint
+            await testEndpoint('/auth-test/');
+            
+            // Test auth test POST
+            await testEndpoint('/auth-test/', 'POST', {test: 'data'});
+            
+            // Test actual login
+            await testEndpoint('/api/auth/login/', 'POST', {
+                username: 'admin',
+                password: 'admin123'
+            });
+        }
+
+        // Run tests when page loads
+        runTests();
+    </script>
+</body>
+</html>

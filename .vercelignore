@@ -1,0 +1,39 @@
+# Ignore backend directory
+backend/
+data/
+docs/
+scripts/
+monitoring/
+nginx/
+github-version/
+rna-lab-navigator-github/
+
+# Python
+*.pyc
+__pycache__/
+.pytest_cache/
+*.egg-info/
+venv/
+
+# Docker
+docker-compose*.yml
+Dockerfile*
+*.railway.json
+
+# Git
+.git/
+.gitignore
+
+# Documentation
+*.md
+LICENSE
+
+# Logs
+*.log
+
+# IDE
+.vscode/
+.idea/
+
+# macOS
+.DS_Store

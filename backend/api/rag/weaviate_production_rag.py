@@ -25,8 +25,8 @@ class WeaviateProductionRAG:
         # Connect to Weaviate
         self.weaviate_client = weaviate.Client("http://localhost:8080")
         
-        # Preload common queries for instant responses
-        self._preload_common_queries()
+        # Disabled preloading to improve performance - was causing 70+ second delays
+        # self._preload_common_queries()
     
     def query(self, question: str, use_cache: bool = True) -> Dict[str, Any]:
         """Enhanced RAG query using Weaviate directly."""

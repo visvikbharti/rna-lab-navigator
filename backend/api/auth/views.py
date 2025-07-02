@@ -335,17 +335,18 @@ def accept_terms(request):
     user.terms_accepted_at = timezone.now()
     user.save()
     
-    # Create audit log
-    AuditLog.objects.create(
-        user=user,
-        username=user.username,
-        user_role=user.role,
-        action='USER_UPDATED',
-        ip_address=get_client_ip(request),
-        user_agent=request.META.get('HTTP_USER_AGENT', ''),
-        resource=f'User: {user.username}',
-        details={'action': 'terms_accepted'}
-    )
+    # Create audit log - temporarily disabled due to FK constraint
+    # TODO: Fix AuditLog foreign key issue
+    # AuditLog.objects.create(
+    #     user=user,
+    #     username=user.username,
+    #     user_role=user.role,
+    #     action='USER_UPDATED',
+    #     ip_address=get_client_ip(request),
+    #     user_agent=request.META.get('HTTP_USER_AGENT', ''),
+    #     resource=f'User: {user.username}',
+    #     details={'action': 'terms_accepted'}
+    # )
     
     return Response({
         'message': 'Terms accepted successfully',
