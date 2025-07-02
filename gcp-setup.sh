@@ -111,8 +111,14 @@ echo -n "$DJANGO_SECRET" | gcloud secrets create django-secret-key --data-file=-
 echo -n "$DB_PASSWORD" | gcloud secrets create db-password --data-file=- || echo "Secret already exists"
 
 # OpenAI API key
-read -s -p "Enter your OpenAI API key: " OPENAI_KEY
-echo
+# Check if .env file exists and extract API key
+if [ -f ".env" ]; then
+    OPENAI_KEY=$(grep "^OPENAI_API_KEY=" .env | cut -d'=' -f2-)
+    echo -e "${GREEN}Found OpenAI API key in .env file${NC}"
+else
+    read -s -p "Enter your OpenAI API key: " OPENAI_KEY
+    echo
+fi
 echo -n "$OPENAI_KEY" | gcloud secrets create openai-api-key --data-file=- || echo "Secret already exists"
 
 # Build and deploy
