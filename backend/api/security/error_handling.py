@@ -180,6 +180,10 @@ class SecurityMiddleware:
         self.get_response = get_response
         
     def __call__(self, request):
+        # Allow OPTIONS requests to pass through for CORS
+        if request.method == 'OPTIONS':
+            return self.get_response(request)
+            
         try:
             response = self.get_response(request)
             

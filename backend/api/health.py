@@ -13,7 +13,7 @@ import weaviate
 
 
 @csrf_exempt
-@require_http_methods(["GET"])
+@require_http_methods(["GET", "OPTIONS"])
 def health_check(request):
     """
     Basic health check endpoint for Railway

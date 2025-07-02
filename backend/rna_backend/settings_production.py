@@ -120,7 +120,17 @@ CORS_ALLOW_HEADERS = [
     'user-agent',
     'x-csrftoken',
     'x-requested-with',
+    'x-request-id',
 ]
+CORS_ALLOW_METHODS = [
+    'DELETE',
+    'GET',
+    'OPTIONS',
+    'PATCH',
+    'POST',
+    'PUT',
+]
+CORS_PREFLIGHT_MAX_AGE = 86400  # 24 hours
 
 # Enhanced security headers for production
 CSP_CONFIG = {
