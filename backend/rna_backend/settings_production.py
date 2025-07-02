@@ -16,8 +16,10 @@ STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
 ALLOWED_HOSTS = [
     'localhost',
     '127.0.0.1',
-    '.railway.app',  # Railway domain
-    '.vercel.app',   # Frontend domain
+    'rna-lab-navigator-production.up.railway.app',  # Specific Railway domain
+    '*.railway.app',  # Railway domain wildcard
+    'rna-lab-navigator.vercel.app',  # Frontend domain
+    '*.vercel.app',   # Vercel domain wildcard
 ]
 
 # Add custom domains from environment
