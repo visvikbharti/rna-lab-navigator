@@ -40,7 +40,7 @@ COPY backend/ ./backend/
 
 # Set environment variables
 ENV PYTHONUNBUFFERED=1
-ENV DJANGO_SETTINGS_MODULE=rna_backend.settings
+ENV DJANGO_SETTINGS_MODULE=rna_backend.settings_production
 
 # Change to backend directory
 WORKDIR /app/backend

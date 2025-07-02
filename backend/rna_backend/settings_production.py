@@ -68,10 +68,15 @@ if not OPENAI_API_KEY:
     raise ValueError("OPENAI_API_KEY must be set in production")
 
 # Security settings for production
-SECURE_SSL_REDIRECT = True
+# Railway handles SSL at the edge, so we disable SSL redirect
+SECURE_SSL_REDIRECT = False
 SECURE_HSTS_SECONDS = 31536000  # 1 year
 SECURE_HSTS_INCLUDE_SUBDOMAINS = True
 SECURE_HSTS_PRELOAD = True
+
+# Railway proxy configuration
+USE_X_FORWARDED_HOST = True
+SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
 
 # Cookie security
 SESSION_COOKIE_SECURE = True
