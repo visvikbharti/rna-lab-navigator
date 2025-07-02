@@ -100,6 +100,8 @@ SECURE_REFERRER_POLICY = 'strict-origin-when-cross-origin'
 CORS_ALLOW_ALL_ORIGINS = False
 CORS_ALLOWED_ORIGINS = [
     'https://rna-lab-navigator.vercel.app',  # Production frontend
+    'https://rna-lab-navigator-git-f-2ot9gt-vishal-bhartis-projects-0646964d.vercel.app',  # Preview deployments
+    'https://rna-lab-navigator-fadynvua2-vishal-bhartis-projects-0646964d.vercel.app',  # Branch deployments
 ]
 
 # Add additional CORS origins from environment
