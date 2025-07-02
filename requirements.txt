@@ -58,3 +58,10 @@ pymupdf==1.23.8
 
 # Paper monitoring
 feedparser==6.0.10
+
+# Missing dependencies
+scikit-learn==1.3.2
+pandas==2.1.4
+matplotlib==3.8.2
+aiohttp==3.9.1
+asgiref==3.7.2
