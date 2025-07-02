@@ -54,8 +54,18 @@ else:\n\
 " || echo "Superuser creation failed"\n\
 echo "Collecting static files..."\n\
 python manage.py collectstatic --noinput || echo "Collectstatic failed"\n\
-echo "Starting Gunicorn..."\n\
-exec gunicorn rna_backend.wsgi:application --bind 0.0.0.0:${PORT:-8000}' > /entrypoint.sh && \
+echo "Starting Gunicorn on port ${PORT:-8000}..."\n\
+echo "Testing Django setup..."\n\
+python manage.py check || echo "Django check failed"\n\
+echo "Starting server..."\n\
+exec gunicorn rna_backend.wsgi:application \\\n\
+    --bind 0.0.0.0:${PORT:-8000} \\\n\
+    --workers 2 \\\n\
+    --threads 4 \\\n\
+    --timeout 120 \\\n\
+    --access-logfile - \\\n\
+    --error-logfile - \\\n\
+    --log-level debug' > /entrypoint.sh && \
     chmod +x /entrypoint.sh
 
 # Expose port
