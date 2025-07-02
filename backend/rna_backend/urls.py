@@ -5,8 +5,10 @@ from django.conf.urls.static import static
 from api.health import health_check, health_detailed, ready_check
 from api.cors_test import cors_test
 from api.auth_test import auth_test
+from api.test_view import test_view
 
 urlpatterns = [
+    path("", test_view, name="root_test"),  # Root path test
     path("admin/", admin.site.urls),
     path("api/", include("api.urls")),
     # Health check endpoints for Railway
