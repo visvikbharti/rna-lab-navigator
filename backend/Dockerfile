@@ -39,8 +39,8 @@ USER rnaapp
 COPY --chown=rnaapp:rnaapp docker-entrypoint.sh /app/
 RUN chmod +x /app/docker-entrypoint.sh
 
-# Expose port
-EXPOSE 8000
+# Expose port - Cloud Run uses PORT env variable
+EXPOSE 8080
 
 # Set entrypoint
 ENTRYPOINT ["/app/docker-entrypoint.sh"]
