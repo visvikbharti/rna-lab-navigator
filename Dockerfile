@@ -1,11 +1,25 @@
+# Build stage
+FROM python:3.11-slim as builder
+
+WORKDIR /app
+
+# Install build dependencies
+RUN apt-get update && apt-get install -y \
+    gcc \
+    g++ \
+    && rm -rf /var/lib/apt/lists/*
+
+# Copy and install Python dependencies
+COPY requirements.txt .
+RUN pip install --user --no-cache-dir -r requirements.txt
+
+# Runtime stage
 FROM python:3.11-slim
 
 WORKDIR /app
 
-# Install system dependencies
+# Install runtime dependencies only
 RUN apt-get update && apt-get install -y \
-    gcc \
-    g++ \
     postgresql-client \
     libgl1-mesa-glx \
     libglib2.0-0 \
@@ -13,12 +27,13 @@ RUN apt-get update && apt-get install -y \
     libxext6 \
     libxrender-dev \
     libgomp1 \
-    wget \
     && rm -rf /var/lib/apt/lists/*
 
-# Copy requirements first for better caching
-COPY requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt
+# Copy Python dependencies from builder
+COPY --from=builder /root/.local /root/.local
+
+# Make sure scripts in .local are usable
+ENV PATH=/root/.local/bin:$PATH
 
 # Copy backend code
 COPY backend/ ./backend/
