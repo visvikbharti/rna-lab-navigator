@@ -72,6 +72,9 @@ APPEND_SLASH = False  # Prevent Django from redirecting to add trailing slashes
 # Force disable common middleware redirects
 PREPEND_WWW = False
 
+# Add Railway proxy middleware to handle edge server issues
+MIDDLEWARE.insert(0, 'api.middleware.railway_proxy.RailwayProxyMiddleware')
+
 # Ensure we trust Railway's proxy headers
 TRUST_X_FORWARDED_PROTO = True
 SECURE_HSTS_SECONDS = 31536000  # 1 year
