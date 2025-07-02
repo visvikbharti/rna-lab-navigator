@@ -27,18 +27,20 @@ if os.getenv("ALLOWED_HOSTS"):
 # Database configuration for Railway PostgreSQL
 if os.getenv('DATABASE_URL'):
     DATABASES = {
-        'default': dj_database_url.parse(os.getenv('DATABASE_URL'))
+        'default': dj_database_url.parse(
+            os.getenv('DATABASE_URL'),
+            conn_max_age=600,
+            conn_health_checks=True,
+        )
     }
+    # Ensure we're using PostgreSQL
+    DATABASES['default']['ENGINE'] = 'django.db.backends.postgresql'
 else:
-    # Fallback to individual PostgreSQL environment variables
+    # Fallback to SQLite for local development
     DATABASES = {
         'default': {
-            'ENGINE': 'django.db.backends.postgresql',
-            'NAME': os.getenv('POSTGRES_DB', 'railway'),
-            'USER': os.getenv('POSTGRES_USER', 'postgres'),
-            'PASSWORD': os.getenv('POSTGRES_PASSWORD'),
-            'HOST': os.getenv('POSTGRES_HOST', 'localhost'),
-            'PORT': os.getenv('POSTGRES_PORT', '5432'),
+            'ENGINE': 'django.db.backends.sqlite3',
+            'NAME': os.path.join(BASE_DIR, 'db.sqlite3'),
         }
     }
 

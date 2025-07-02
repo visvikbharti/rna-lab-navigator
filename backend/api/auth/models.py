@@ -46,7 +46,8 @@ class User(AbstractUser):
     # Professional information
     employee_id = models.CharField(
         max_length=50, 
-        unique=True,
+        blank=True,
+        null=True,
         help_text="CSIR-IGIB employee ID"
     )
     department = models.CharField(
