@@ -5,8 +5,7 @@ import django.db.models.deletion
 
 
 class Migration(migrations.Migration):
-    initial = True
-
+    
     dependencies = [
         ('api_auth', '0000_initial_user'),
     ]

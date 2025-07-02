@@ -1,6 +1,7 @@
 # RNA Lab Navigator - Session Documentation
-## Date: July 1, 2025
-## Session Start: ~5:00 PM IST
+## Date: July 1-2, 2025
+## Session Start: July 1, ~5:00 PM IST
+## Session End: July 2, ~1:00 PM IST
 
 ---
 
