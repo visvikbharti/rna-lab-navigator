@@ -183,6 +183,10 @@ class SecurityMiddleware:
         # Allow OPTIONS requests to pass through for CORS
         if request.method == 'OPTIONS':
             return self.get_response(request)
+        
+        # Allow auth endpoints to pass through without security checks
+        if request.path.startswith('/api/auth/') or request.path.startswith('/auth-test/'):
+            return self.get_response(request)
             
         try:
             response = self.get_response(request)

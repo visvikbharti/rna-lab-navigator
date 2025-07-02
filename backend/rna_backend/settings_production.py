@@ -74,6 +74,7 @@ if not OPENAI_API_KEY:
 # Security settings for production
 # Railway handles SSL at the edge, so we disable SSL redirect
 SECURE_SSL_REDIRECT = False
+APPEND_SLASH = False  # Prevent Django from redirecting to add trailing slashes
 SECURE_HSTS_SECONDS = 31536000  # 1 year
 SECURE_HSTS_INCLUDE_SUBDOMAINS = True
 SECURE_HSTS_PRELOAD = True

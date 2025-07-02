@@ -4,6 +4,7 @@ from django.conf import settings
 from django.conf.urls.static import static
 from api.health import health_check, health_detailed, ready_check
 from api.cors_test import cors_test
+from api.auth_test import auth_test
 
 urlpatterns = [
     path("admin/", admin.site.urls),
@@ -12,6 +13,7 @@ urlpatterns = [
     path("health/", health_check, name="health_check"),
     path("health/detailed/", health_detailed, name="health_detailed"),
     path("cors-test/", cors_test, name="cors_test"),
+    path("auth-test/", auth_test, name="auth_test"),
     path("ready/", ready_check, name="ready_check"),
     # The following URLs are already included in api.urls and don't need to be duplicated here
     # path("api/quality/", include("api.quality.urls")),
