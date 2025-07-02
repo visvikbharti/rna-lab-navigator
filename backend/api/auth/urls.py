@@ -15,6 +15,7 @@ from .views import (
     accept_terms,
     check_permissions,
 )
+from .demo_views import demo_login, demo_user_info
 
 app_name = 'auth'
 
