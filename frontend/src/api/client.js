@@ -3,7 +3,7 @@ import { ApiError, NetworkError, parseError } from '../utils/errorHandler';
 
 // Create axios instance with defaults
 const apiClient = axios.create({
-  baseURL: import.meta.env.VITE_API_URL || 'http://localhost:8000/api',
+  baseURL: import.meta.env.VITE_API_URL || 'http://localhost:8000',
   timeout: 30000,
   headers: {
     'Content-Type': 'application/json',
@@ -51,7 +51,7 @@ apiClient.interceptors.response.use(
       try {
         const refreshToken = localStorage.getItem('refreshToken');
         if (refreshToken) {
-          const response = await apiClient.post('/auth/refresh', { refreshToken });
+          const response = await apiClient.post('/api/auth/refresh/', { refresh: refreshToken });
           const { accessToken } = response.data;
           localStorage.setItem('authToken', accessToken);
           

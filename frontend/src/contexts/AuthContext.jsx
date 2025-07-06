@@ -3,7 +3,7 @@ import axios from 'axios';
 
 const AuthContext = createContext(null);
 
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000/api';
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
 
 // Configure axios defaults
 axios.defaults.baseURL = API_BASE_URL;
@@ -31,7 +31,7 @@ axios.interceptors.response.use(
       
       try {
         const refreshToken = localStorage.getItem('refresh_token');
-        const response = await axios.post('/auth/refresh/', {
+        const response = await axios.post('/api/auth/refresh/', {
           refresh: refreshToken
         });
         
@@ -76,7 +76,7 @@ export const AuthProvider = ({ children }) => {
       }
 
       try {
-        const response = await axios.get('/auth/profile/');
+        const response = await axios.get('/api/auth/profile/');
         setUser(response.data);
       } catch (error) {
         console.error('Auth check failed:', error);
@@ -92,7 +92,7 @@ export const AuthProvider = ({ children }) => {
   const login = async (username, password) => {
     try {
       setError(null);
-      const response = await axios.post('/auth/login/', {
+      const response = await axios.post('/api/auth/login/', {
         username,
         password
       });
@@ -120,7 +120,7 @@ export const AuthProvider = ({ children }) => {
     try {
       const refreshToken = localStorage.getItem('refresh_token');
       if (refreshToken) {
-        await axios.post('/auth/logout/', {
+        await axios.post('/api/auth/logout/', {
           refresh_token: refreshToken
         });
       }
@@ -137,7 +137,7 @@ export const AuthProvider = ({ children }) => {
   const register = async (userData) => {
     try {
       setError(null);
-      const response = await axios.post('/auth/register/', userData);
+      const response = await axios.post('/api/auth/register/', userData);
       return { success: true, data: response.data };
     } catch (error) {
       const errorMessage = error.response?.data?.detail || 
@@ -151,7 +151,7 @@ export const AuthProvider = ({ children }) => {
   const changePassword = async (oldPassword, newPassword, newPasswordConfirm) => {
     try {
       setError(null);
-      const response = await axios.post('/auth/change-password/', {
+      const response = await axios.post('/api/auth/change-password/', {
         old_password: oldPassword,
         new_password: newPassword,
         new_password_confirm: newPasswordConfirm
@@ -168,7 +168,7 @@ export const AuthProvider = ({ children }) => {
   const updateProfile = async (profileData) => {
     try {
       setError(null);
-      const response = await axios.put('/auth/profile/update/', profileData);
+      const response = await axios.put('/api/auth/profile/update/', profileData);
       setUser(response.data.user);
       return { success: true, data: response.data };
     } catch (error) {
@@ -181,7 +181,7 @@ export const AuthProvider = ({ children }) => {
 
   const acceptTerms = async () => {
     try {
-      const response = await axios.post('/auth/accept-terms/');
+      const response = await axios.post('/api/auth/accept-terms/');
       setUser(prev => ({
         ...prev,
         terms_accepted_at: response.data.accepted_at
@@ -194,7 +194,7 @@ export const AuthProvider = ({ children }) => {
 
   const checkPermissions = async () => {
     try {
-      const response = await axios.get('/auth/permissions/');
+      const response = await axios.get('/api/auth/permissions/');
       return response.data;
     } catch (error) {
       console.error('Permission check failed:', error);
