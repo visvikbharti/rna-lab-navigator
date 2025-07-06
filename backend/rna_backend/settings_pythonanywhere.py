@@ -96,4 +96,34 @@ LOGGING = {
 # WhiteNoise settings for static files
 STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
 
+# CORS settings for frontend
+CORS_ALLOWED_ORIGINS = [
+    'https://rna-lab-navigator.vercel.app',
+    'https://rna-lab-navigator-git-fix-openai-api-v1.vercel.app',
+    'https://rna-lab-navigator-git-pythonanywhere-deploy.vercel.app',
+    'http://localhost:5173',  # Local development
+    'http://localhost:3000',  # Alternative local port
+]
+
+# For development, you might want to use regex patterns
+# CORS_ALLOWED_ORIGIN_REGEXES = [
+#     r"^https://rna-lab-navigator-.*\.vercel\.app$",
+# ]
+
+# Allow credentials for authentication
+CORS_ALLOW_CREDENTIALS = True
+
+# Allow these headers in CORS requests
+CORS_ALLOW_HEADERS = [
+    'accept',
+    'accept-encoding',
+    'authorization',
+    'content-type',
+    'dnt',
+    'origin',
+    'user-agent',
+    'x-csrftoken',
+    'x-requested-with',
+]
+
 print("PythonAnywhere settings loaded successfully!")
