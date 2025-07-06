@@ -5,6 +5,7 @@
 
 [![License: Private](https://img.shields.io/badge/License-Private-red.svg)]()
 [![Status: Production Ready](https://img.shields.io/badge/Status-Production_Ready-green.svg)]()
+[![Deployment: PythonAnywhere + Vercel](https://img.shields.io/badge/Deployment-PythonAnywhere_+_Vercel-blue.svg)]()
 [![Python](https://img.shields.io/badge/Python-3.9+-blue.svg)](https://www.python.org/downloads/)
 [![Django](https://img.shields.io/badge/Django-4.2-green.svg)](https://www.djangoproject.com/)
 [![React](https://img.shields.io/badge/React-18-blue.svg)](https://reactjs.org/)
