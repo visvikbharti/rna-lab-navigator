@@ -101,14 +101,16 @@ CORS_ALLOWED_ORIGINS = [
     'https://rna-lab-navigator.vercel.app',
     'https://rna-lab-navigator-git-fix-openai-api-v1.vercel.app',
     'https://rna-lab-navigator-git-pythonanywhere-deploy.vercel.app',
+    'https://rna-lab-navigator-production.vercel.app',
+    'https://rna-lab-navigator-production-ctbr1wtbw.vercel.app',  # Current deployment
     'http://localhost:5173',  # Local development
     'http://localhost:3000',  # Alternative local port
 ]
 
-# For development, you might want to use regex patterns
-# CORS_ALLOWED_ORIGIN_REGEXES = [
-#     r"^https://rna-lab-navigator-.*\.vercel\.app$",
-# ]
+# Allow all Vercel preview deployments
+CORS_ALLOWED_ORIGIN_REGEXES = [
+    r"^https://rna-lab-navigator-.*\.vercel\.app$",
+]
 
 # Allow credentials for authentication
 CORS_ALLOW_CREDENTIALS = True
