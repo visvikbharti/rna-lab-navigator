@@ -154,4 +154,4 @@ The application supports custom themes. Edit `src/styles/design-tokens.css` to c
 
 ## 📞 Support
 
-For UI/UX issues or feature requests, contact the development team.
+For UI/UX issues or feature requests, contact the development team.# Deployment trigger Mon Jul  7 02:00:54 IST 2025
