@@ -24,7 +24,7 @@ DATABASES = {
         'NAME': 'rnalab$rna_lab_db',
         'USER': 'rnalab',
         'PASSWORD': os.environ.get('DB_PASSWORD', ''),  # Set in PythonAnywhere env vars
-        'HOST': 'rnalab.postgres.pythonanywhere-services.com',
+        'HOST': 'rnalab-postgres.postgres.pythonanywhere-services.com',
         'PORT': os.environ.get('DB_PORT', ''),  # Set in PythonAnywhere env vars
     }
 }
