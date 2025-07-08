@@ -48,6 +48,16 @@ CORS_ALLOWED_ORIGINS = [
 CELERY_TASK_ALWAYS_EAGER = True  # No Celery workers on PythonAnywhere
 USE_REDIS = False  # No Redis on free tier
 
+# Cache configuration - use dummy cache instead of Redis
+CACHES = {
+    'default': {
+        'BACKEND': 'django.core.cache.backends.dummy.DummyCache',
+    }
+}
+
+# Disable django-axes cache (use database instead)
+AXES_CACHE = 'default'
+
 # Weaviate configuration
 # We'll use Weaviate Cloud or a simple PostgreSQL-based search
 WEAVIATE_URL = os.environ.get('WEAVIATE_URL', '')

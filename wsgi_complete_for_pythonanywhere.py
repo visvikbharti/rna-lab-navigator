@@ -18,6 +18,12 @@ project_home = '/home/rnalab/rna-lab-navigator/backend'
 if project_home not in sys.path:
     sys.path.insert(0, project_home)
 
+# Patch sentence_transformers before importing Django
+try:
+    import patch_sentence_transformers
+except Exception as e:
+    print(f"Warning: Could not patch sentence_transformers: {e}")
+
 # Import Django and get WSGI application
 from django.core.wsgi import get_wsgi_application
 application = get_wsgi_application()
