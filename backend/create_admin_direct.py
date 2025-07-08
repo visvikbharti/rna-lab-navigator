@@ -17,8 +17,8 @@ settings.configure(
             'NAME': 'rnalab$rna_lab_db',
             'USER': 'super',
             'PASSWORD': 'qwerty121',
-            'HOST': 'rnalab-2025.postgres.pythonanywhere-services.com',
-            'PORT': '12025',
+            'HOST': 'rnalab-4669.postgres.pythonanywhere-services.com',
+            'PORT': '14669',
         }
     },
     INSTALLED_APPS=[
