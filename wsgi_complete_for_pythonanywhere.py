@@ -9,7 +9,7 @@ os.environ['DJANGO_SETTINGS_MODULE'] = 'rna_backend.settings_pythonanywhere'
 os.environ['SECRET_KEY'] = 'django-insecure-bm6=6q7v3uh@o0e&_06(nq*!i*3l@p=o%j9a0tja+j3z+8c#e4'
 os.environ['DB_PASSWORD'] = 'qwerty121'
 os.environ['DB_PORT'] = '14669'
-os.environ['OPENAI_API_KEY'] = 'your-openai-api-key-here'  # Add your actual OpenAI API key
+os.environ['OPENAI_API_KEY'] = 'your-openai-api-key-here'  # IMPORTANT: Add your actual key here
 os.environ['DEBUG'] = 'False'  # Important: Set to False in production
 os.environ['ALLOWED_HOSTS'] = 'rnalab.pythonanywhere.com'
 
