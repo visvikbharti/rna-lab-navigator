@@ -22,10 +22,10 @@ DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
         'NAME': 'rnalab$rna_lab_db',
-        'USER': 'rnalab',
-        'PASSWORD': os.environ.get('DB_PASSWORD', ''),  # Set in PythonAnywhere env vars
+        'USER': 'super',
+        'PASSWORD': os.environ.get('DB_PASSWORD', 'qwerty121'),  # Set in PythonAnywhere env vars
         'HOST': 'rnalab-4669.postgres.pythonanywhere-services.com',
-        'PORT': os.environ.get('DB_PORT', ''),  # Set in PythonAnywhere env vars
+        'PORT': os.environ.get('DB_PORT', '14669'),  # Set in PythonAnywhere env vars
     }
 }
 
