@@ -6,7 +6,7 @@ import os
 import sys
 
 # Set all environment variables BEFORE importing Django
-os.environ['DJANGO_SETTINGS_MODULE'] = 'rna_backend.settings'
+os.environ['DJANGO_SETTINGS_MODULE'] = 'rna_backend.settings_pythonanywhere'
 os.environ['SECRET_KEY'] = 'django-insecure-bm6=6q7v3uh@o0e&_06(nq*!i*3l@p=o%j9a0tja+j3z+8c#e4'
 os.environ['DEBUG'] = 'True'
 os.environ['ALLOWED_HOSTS'] = 'rnalab.pythonanywhere.com,localhost,127.0.0.1'
