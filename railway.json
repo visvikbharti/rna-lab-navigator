@@ -2,15 +2,13 @@
   "$schema": "https://railway.app/railway.schema.json",
   "build": {
     "builder": "DOCKERFILE",
-    "dockerfilePath": "./backend/Dockerfile",
-    "buildCommand": "echo 'Using Docker build'"
+    "dockerfilePath": "Dockerfile"
   },
   "deploy": {
-    "startCommand": "cd backend && gunicorn rna_backend.wsgi:application --bind 0.0.0.0:${PORT:-8000} --workers 3 --timeout 120",
     "restartPolicyType": "ON_FAILURE",
     "restartPolicyMaxRetries": 10,
     "healthcheckPath": "/api/health/",
     "healthcheckTimeout": 300
   },
-  "root": "backend"
+  "root": "./backend"
 }
