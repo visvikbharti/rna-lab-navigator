@@ -20,9 +20,9 @@ RUN apt-get update \
     && rm -rf /var/lib/apt/lists/*
 
 # Copy requirements file and install dependencies
-COPY requirements_railway.txt requirements.txt ./
+COPY requirements_fixed.txt requirements.txt ./
 RUN pip install --upgrade pip && \
-    pip install --no-cache-dir -r requirements_railway.txt
+    pip install --no-cache-dir -r requirements_fixed.txt
 
 # Copy project files
 COPY . .
