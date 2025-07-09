@@ -1,0 +1,50 @@
+# Core Django
+Django==4.2.10
+djangorestframework==3.14.0
+djangorestframework-simplejwt==5.3.0
+django-cors-headers==4.3.1
+django-axes==6.1.1
+dj-database-url==2.1.0
+
+# Database
+psycopg2-binary==2.9.9
+
+# Redis & Caching
+redis==5.0.1
+django-redis==5.4.0
+hiredis==2.3.2
+
+# Celery
+celery==5.3.6
+
+# Web Server
+gunicorn==21.2.0
+
+# Weaviate
+weaviate-client==3.25.2
+
+# Document Processing
+Pillow==10.1.0
+pdfplumber==0.10.3
+PyMuPDF==1.23.8
+pypdf==3.17.4
+python-docx==1.1.0
+python-pptx==0.6.23
+python-magic==0.4.27
+
+# AI/ML - Simplified for Railway
+numpy==1.24.3
+openai==1.12.0
+
+# Search
+faiss-cpu==1.7.4
+rank-bm25==0.2.2
+
+# Utilities
+python-dotenv==1.0.0
+aiofiles==23.2.1
+rich==13.7.1
+feedparser==6.0.10
+
+# Note: We'll use OpenAI embeddings instead of local models for Railway deployment
+# This avoids heavy ML dependencies like torch, transformers, sentence-transformers

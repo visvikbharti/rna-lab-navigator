@@ -20,8 +20,9 @@ RUN apt-get update \
     && rm -rf /var/lib/apt/lists/*
 
 # Copy requirements file and install dependencies
-COPY requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt
+COPY requirements_fixed.txt requirements.txt ./
+RUN pip install --upgrade pip && \
+    pip install --no-cache-dir -r requirements_fixed.txt
 
 # Copy project files
 COPY . .
@@ -45,5 +46,5 @@ EXPOSE 8000
 # Set entrypoint
 ENTRYPOINT ["/app/docker-entrypoint.sh"]
 
-# Default command - Railway sets PORT automatically
-CMD ["gunicorn", "rna_backend.wsgi:application", "--bind", "0.0.0.0:$PORT", "--workers", "3", "--timeout", "120", "--access-logfile", "-", "--error-logfile", "-"]
+# Default command
+CMD ["sh", "-c", "gunicorn rna_backend.wsgi:application --bind 0.0.0.0:${PORT:-8000} --workers 3 --timeout 120 --access-logfile - --error-logfile -"]

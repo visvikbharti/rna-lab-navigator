@@ -3,7 +3,7 @@ import { ApiError, NetworkError, parseError } from '../utils/errorHandler';
 
 // Create axios instance with defaults
 const apiClient = axios.create({
-  baseURL: import.meta.env.VITE_API_URL || 'http://localhost:8000/api',
+  baseURL: import.meta.env.VITE_API_URL || 'http://localhost:8000',
   timeout: 30000,
   headers: {
     'Content-Type': 'application/json',
@@ -14,7 +14,7 @@ const apiClient = axios.create({
 apiClient.interceptors.request.use(
   (config) => {
     // Add auth token if available
-    const token = localStorage.getItem('authToken');
+    const token = localStorage.getItem('access_token');
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }
@@ -49,20 +49,20 @@ apiClient.interceptors.response.use(
       
       // Try to refresh token
       try {
-        const refreshToken = localStorage.getItem('refreshToken');
+        const refreshToken = localStorage.getItem('refresh_token');
         if (refreshToken) {
-          const response = await apiClient.post('/auth/refresh', { refreshToken });
-          const { accessToken } = response.data;
-          localStorage.setItem('authToken', accessToken);
+          const response = await apiClient.post('/api/auth/refresh/', { refresh: refreshToken });
+          const { access } = response.data;
+          localStorage.setItem('access_token', access);
           
           // Retry original request
-          originalRequest.headers.Authorization = `Bearer ${accessToken}`;
+          originalRequest.headers.Authorization = `Bearer ${access}`;
           return apiClient(originalRequest);
         }
       } catch (refreshError) {
         // Refresh failed, redirect to login
-        localStorage.removeItem('authToken');
-        localStorage.removeItem('refreshToken');
+        localStorage.removeItem('access_token');
+        localStorage.removeItem('refresh_token');
         window.location.href = '/login';
       }
     }

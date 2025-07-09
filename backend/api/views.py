@@ -24,7 +24,13 @@ import json
 import time
 import asyncio
 import uuid
-from sentence_transformers import CrossEncoder
+
+# Try to import sentence_transformers, fall back to mock if not available
+try:
+    from sentence_transformers import CrossEncoder
+except ImportError:
+    from .mock_sentence_transformers import CrossEncoder
+
 from .offline import get_llm_client, get_cross_encoder, is_offline_mode
 
 # Import multi-hop reasoning

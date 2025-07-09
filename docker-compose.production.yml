@@ -1,0 +1,137 @@
+version: '3.8'
+
+services:
+  postgres:
+    image: postgres:14-alpine
+    restart: always
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    environment:
+      POSTGRES_DB: rna_lab_db
+      POSTGRES_USER: rna_user
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+    networks:
+      - rna_network
+
+  redis:
+    image: redis:7-alpine
+    restart: always
+    volumes:
+      - redis_data:/data
+    networks:
+      - rna_network
+
+  weaviate:
+    image: semitechnologies/weaviate:1.26.1
+    restart: always
+    environment:
+      QUERY_DEFAULTS_LIMIT: 20
+      AUTHENTICATION_ANONYMOUS_ACCESS_ENABLED: 'true'
+      PERSISTENCE_DATA_PATH: '/var/lib/weaviate'
+      DEFAULT_VECTORIZER_MODULE: 'text2vec-openai'
+      ENABLE_MODULES: 'text2vec-openai'
+      CLUSTER_HOSTNAME: 'node1'
+      OPENAI_APIKEY: ${OPENAI_API_KEY}
+    volumes:
+      - weaviate_data:/var/lib/weaviate
+    networks:
+      - rna_network
+
+  backend:
+    build: 
+      context: ./backend
+      dockerfile: Dockerfile
+    restart: always
+    depends_on:
+      - postgres
+      - redis
+      - weaviate
+    environment:
+      - DATABASE_URL=postgresql://rna_user:${DB_PASSWORD}@postgres:5432/rna_lab_db
+      - REDIS_URL=redis://redis:6379/0
+      - WEAVIATE_URL=http://weaviate:8080
+      - SECRET_KEY=${SECRET_KEY}
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - DEBUG=False
+      - ALLOWED_HOSTS=*
+      - DJANGO_SETTINGS_MODULE=rna_backend.settings_production
+    volumes:
+      - static_volume:/app/static
+      - media_volume:/app/media
+      - ./backend/backups:/app/backups
+    command: >
+      sh -c "python manage.py migrate &&
+             python manage.py collectstatic --noinput &&
+             gunicorn rna_backend.wsgi:application --bind 0.0.0.0:8000 --workers 4 --timeout 120"
+    networks:
+      - rna_network
+
+  celery:
+    build: ./backend
+    restart: always
+    depends_on:
+      - redis
+      - postgres
+    environment:
+      - DATABASE_URL=postgresql://rna_user:${DB_PASSWORD}@postgres:5432/rna_lab_db
+      - REDIS_URL=redis://redis:6379/0
+      - SECRET_KEY=${SECRET_KEY}
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - DJANGO_SETTINGS_MODULE=rna_backend.settings_production
+    command: celery -A rna_backend worker -l info
+    networks:
+      - rna_network
+
+  celery-beat:
+    build: ./backend
+    restart: always
+    depends_on:
+      - redis
+      - postgres
+    environment:
+      - DATABASE_URL=postgresql://rna_user:${DB_PASSWORD}@postgres:5432/rna_lab_db
+      - REDIS_URL=redis://redis:6379/0
+      - SECRET_KEY=${SECRET_KEY}
+      - DJANGO_SETTINGS_MODULE=rna_backend.settings_production
+    command: celery -A rna_backend beat -l info
+    networks:
+      - rna_network
+
+  nginx:
+    image: nginx:alpine
+    restart: always
+    ports:
+      - "80:80"
+    volumes:
+      - ./nginx/nginx.prod.conf:/etc/nginx/conf.d/default.conf
+      - static_volume:/static
+      - media_volume:/media
+      - frontend_build:/usr/share/nginx/html
+    depends_on:
+      - backend
+    networks:
+      - rna_network
+
+  frontend-builder:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile.prod
+    volumes:
+      - frontend_build:/app/dist
+    environment:
+      - VITE_API_URL=http://${LAB_STATIC_IP}/api
+    command: npm run build
+    networks:
+      - rna_network
+
+volumes:
+  postgres_data:
+  redis_data:
+  weaviate_data:
+  static_volume:
+  media_volume:
+  frontend_build:
+
+networks:
+  rna_network:
+    driver: bridge

@@ -8,7 +8,7 @@ import {
   CheckCircleIcon,
   LockClosedIcon,
   CalendarIcon,
-  ActivityIcon
+  ClockIcon
 } from '@heroicons/react/24/outline';
 import { useAuth } from '../../contexts/AuthContext';
 import axios from 'axios';
