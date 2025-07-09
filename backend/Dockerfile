@@ -45,5 +45,5 @@ EXPOSE 8000
 # Set entrypoint
 ENTRYPOINT ["/app/docker-entrypoint.sh"]
 
-# Default command - Railway sets PORT automatically
-CMD ["gunicorn", "rna_backend.wsgi:application", "--bind", "0.0.0.0:$PORT", "--workers", "3", "--timeout", "120", "--access-logfile", "-", "--error-logfile", "-"]
+# Default command
+CMD ["sh", "-c", "gunicorn rna_backend.wsgi:application --bind 0.0.0.0:${PORT:-8000} --workers 3 --timeout 120 --access-logfile - --error-logfile -"]
